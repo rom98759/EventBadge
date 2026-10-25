@@ -222,7 +222,7 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
         </div>
         <div class="seek">
           <span class="newbadge" aria-hidden="true">NEW!</span>
-          <span class="txt">Je cherche une <b>alternance</b> en <b>développement, sécurité ou DevSecOps</b>.<br><span class="dispo">Disponible dès juin 2027.</span></span>
+          <span class="txt">Je cherche une <b>alternance</b> en <b>développement, sécurité ou DevSecOps</b>.<br><span class="dispo">Disponible dès juin 2027</span></span>
         </div>
       </div>
 
