@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ce_WiFi_est_un_piege</title>
+<style>
+/* Win95 nostalgia portal — phone-first, offline-safe (system fonts only).
+   This standalone file is the design source; it becomes portal.h on the ESP. */
+:root{
+  --teal:#007a7a;--face:#c0c0c0;--hi:#fff;--lt:#dfdfdf;--sh:#808080;--dk:#000;
+  --navy:#000080;--navy2:#1084d0;--yellow:#ffe15a;
+  --font:Tahoma,"MS Sans Serif",Geneva,system-ui,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--teal);color:#000;font-family:var(--font);font-size:13px;line-height:1.45;overflow-x:hidden}
+.desk{min-height:100vh;position:relative;background:var(--teal);
+  padding:14px max(12px,env(safe-area-inset-left,0px)) calc(62px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-right,0px))}
+
+/* window chrome */
+.win{max-width:400px;margin:0 auto;background:var(--face);
+  border:2px solid;border-color:var(--lt) var(--dk) var(--dk) var(--lt);
+  box-shadow:1px 1px 0 var(--sh),3px 3px 10px #0000004d}
+.win>.in{border:1px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:2px}
+.tb{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;
+  display:flex;justify-content:space-between;align-items:center;padding:3px 3px 3px 6px;font-weight:700;gap:8px}
+.tb .name{display:flex;align-items:center;gap:6px;min-width:0}
+.tb .name svg{width:16px;height:16px;flex:none}
+.tb .name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb .btns{display:flex;gap:2px;flex:none}
+.tb .btns b{width:18px;height:16px;background:var(--face);border:2px solid;border-color:var(--hi) var(--dk) var(--dk) var(--hi);
+  color:#000;font:700 11px/12px var(--font);text-align:center;cursor:pointer;user-select:none}
+.menu{display:flex;gap:10px;padding:3px 8px;font-size:12px;position:relative}
+.menu .mitem{position:relative}
+.menu .mlabel{cursor:pointer;padding:1px 5px;display:inline-block;user-select:none}
+.menu .mlabel.open{background:var(--navy);color:#fff}
+.dropdown{position:absolute;top:100%;left:0;z-index:30;min-width:186px;margin:1px 0 0;padding:2px;list-style:none;
+  background:var(--face);border:2px solid;border-color:var(--hi) var(--dk) var(--dk) var(--hi);box-shadow:3px 3px 7px #00000055}
+.dropdown[hidden]{display:none}
+.dropdown li a{display:block;padding:6px 18px 6px 10px;color:#000;text-decoration:none;white-space:nowrap}
+.dropdown li a:hover,.dropdown li a:focus{background:var(--navy);color:#fff}
+.dropdown li.sep{height:1px;background:var(--sh);border-bottom:1px solid var(--hi);margin:3px 2px}
+.body{padding:12px 12px 8px}
+/* about modal */
+.modal{position:fixed;inset:0;z-index:50;background:#00000044;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal[hidden]{display:none}
+.awin{max-width:300px;width:100%}
+.abody{padding:14px}
+.arow{display:flex;gap:12px;align-items:flex-start}
+.arow .logo{flex:none;width:42px;height:42px}
+.abody .ver{font-weight:700;font-size:14px}
+.abody p{margin:7px 0 0}
+
+/* buttons */
+.b95{background:var(--face);border:2px solid;border-color:var(--hi) var(--dk) var(--dk) var(--hi);
+  padding:6px 12px;font:13px var(--font);color:#000;text-decoration:none;cursor:pointer;display:inline-block}
+.b95:active{border-color:var(--dk) var(--hi) var(--hi) var(--dk)}
+.b95:focus-visible{outline:1px dotted #000;outline-offset:-4px}
+
+/* dialog + right-aligned OK */
+.dlg{display:flex;gap:12px;align-items:flex-start}
+.warn{flex:none}.warn svg{width:40px;height:40px}
+.dlg .msg b{font-size:14px}
+.dlgbtns{display:flex;justify-content:flex-end;margin:10px 0 2px}
+.dlgbtns .b95{min-width:84px;text-align:center}
+
+/* ===== HERO : Qui suis-je ===== */
+.hero{margin-top:14px;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);background:#fff}
+.hero .cap{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;font-weight:700;padding:4px 8px;display:flex;align-items:center;gap:6px}
+.hero .cap svg{width:14px;height:14px}
+.hero .inner{padding:14px 13px;display:flex;gap:13px;align-items:flex-start}
+.avatar{flex:none;width:84px;height:84px;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);background:#d8e4e4}
+.avatar svg,.avatar img{width:100%;height:100%;display:block;object-fit:cover}
+.hero .who{min-width:0}
+.hero .nm{font-size:21px;font-weight:700;line-height:1.1}
+.hero .role{font-family:var(--mono);font-size:11px;color:#007a7a;text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.hero .desc{margin-top:8px}
+.seek{margin:0 13px 14px;background:var(--yellow);border:2px solid;border-color:var(--dk) #b89a00 #b89a00 var(--dk);
+  padding:9px 11px;font-weight:700;display:flex;gap:9px;align-items:center}
+.seek .txt{min-width:0}
+.seek b{color:#b5121b}
+.seek .dispo{display:inline-block;margin-top:5px;font-size:14px;font-weight:700;background:var(--navy);color:#fff;padding:3px 8px}
+.newbadge{flex:none;background:#c00;color:#fff;font:800 10px/1 var(--mono);padding:4px 5px;border-radius:2px;transform:rotate(-8deg);
+  box-shadow:1px 1px 0 #600}
+@media(prefers-reduced-motion:no-preference){.newbadge{animation:pulse 1.1s ease-in-out infinite}}
+@keyframes pulse{50%{transform:rotate(-8deg) scale(1.14)}}
+
+/* alternance marquee (decorative) */
+.alt{margin-top:2px;background:var(--navy);color:#fff;overflow:hidden;white-space:nowrap;padding:7px 0;font-weight:700}
+.alt .track{display:inline-block;padding-left:100%;animation:mq 18s linear infinite}
+.alt .track .star{color:#ff0}
+@keyframes mq{to{transform:translateX(-100%)}}
+@media(prefers-reduced-motion:reduce){.alt{white-space:normal;padding:7px 10px}.alt .track{display:block;padding-left:0;animation:none}}
+
+/* group boxes */
+fieldset{border:1px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);margin:14px 0 0;padding:14px 10px 10px;position:relative;min-width:0}
+fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);padding:0 5px;font-weight:700;font-size:12px}
+
+/* contact */
+.hint{font-size:11px;color:#303030;margin:0 0 7px}
+.links{display:grid;gap:8px}
+.links a{display:flex;align-items:center;gap:9px;padding:9px 12px}
+.links a svg{width:20px;height:20px;flex:none}
+.links a .lbl{font-weight:700;flex:none}
+.links a .u{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--navy);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
+
+/* progress + diagnostic (secondary) */
+.prog{margin:10px 0 2px}
+.prog .lbl{font-size:12px;margin-bottom:4px}
+.pbar{height:18px;background:#fff;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:2px;display:flex;gap:2px;overflow:hidden}
+.pbar i{width:9px;flex:none;background:var(--navy);display:block}
+.field{background:#fff;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:7px 8px;font-family:var(--mono);font-size:12px}
+.field .rowi{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.field .rowi+.rowi{border-top:1px dotted #c7c7c7}
+.field .an{color:var(--navy);font-family:var(--font);font-style:italic;display:block;padding:1px 0 3px}
+
+/* status + note */
+.status{display:flex;gap:4px;margin-top:12px}
+.status span{border:1px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:2px 6px;font-size:11px;color:#303030}
+.status span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status span.r{flex:none}
+.note{color:#303030;font-size:11px;margin:10px 2px 0;line-height:1.5}
+
+/* taskbar */
+.task{position:fixed;left:0;right:0;bottom:0;min-height:34px;background:var(--face);
+  border-top:2px solid var(--hi);display:flex;align-items:center;gap:6px;z-index:20;
+  padding:3px max(6px,env(safe-area-inset-right,0px)) calc(3px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
+.start{display:flex;align-items:center;gap:5px;font-weight:700;padding:4px 10px 4px 7px;
+  border:2px solid;border-color:var(--hi) var(--dk) var(--dk) var(--hi);background:var(--face);cursor:pointer;user-select:none}
+.start.open{border-color:var(--dk) var(--hi) var(--hi) var(--dk);background:#b0b0b0}
+.start svg{width:18px;height:16px}
+.taskbtn{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:4px 8px;
+  border:2px solid;border-color:var(--dk) var(--hi) var(--hi) var(--dk);background:#bdbdbd;
+  font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.taskbtn svg{width:14px;height:14px;flex:none}
+.clock{flex:none;border:1px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);
+  padding:4px 9px;font-size:12px;font-variant-numeric:tabular-nums}
+
+/* start menu */
+.startmenu{position:fixed;left:6px;bottom:calc(40px + env(safe-area-inset-bottom,0px));width:210px;z-index:25;
+  background:var(--face);border:2px solid;border-color:var(--hi) var(--dk) var(--dk) var(--hi);box-shadow:3px 3px 8px #00000055}
+.startmenu[hidden]{display:none}
+.startmenu .rail{display:flex}
+.startmenu .side{writing-mode:vertical-lr;transform:rotate(180deg);background:linear-gradient(0deg,var(--navy),var(--navy2));
+  color:#fff;font-weight:800;letter-spacing:1px;padding:10px 5px;text-align:right}
+.startmenu ul{list-style:none;margin:0;padding:3px;flex:1}
+.startmenu li a{display:block;padding:7px 9px;color:#000;text-decoration:none}
+.startmenu li a:hover,.startmenu li a:focus{background:var(--navy);color:#fff}
+.startmenu .sep{height:1px;background:var(--sh);border-bottom:1px solid var(--hi);margin:3px 2px}
+
+/* BSOD easter egg */
+.bsod{position:fixed;inset:0;z-index:60;background:#0000aa;color:#fff;font-family:var(--mono);
+  font-size:14px;line-height:1.7;padding:34px 20px;display:flex;flex-direction:column;gap:18px;justify-content:center}
+.bsod[hidden]{display:none}
+.bsod .h{background:#aaa;color:#0000aa;font-weight:700;padding:1px 10px;align-self:center}
+.bsod .k{color:#fff}
+.bsod .blink::after{content:"_";animation:bk 1s steps(1) infinite}
+@keyframes bk{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.bsod .blink::after{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="desk">
+  <div class="win"><div class="in">
+    <div class="tb">
+      <span class="name">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="11" fill="#fff" stroke="#000"/><rect x="1" y="2" width="14" height="3" fill="#000080"/><path d="M5 14h6M8 13v1" stroke="#000"/></svg>
+        <span>Ce_WiFi_est_un_piege.exe</span>
+      </span>
+      <span class="btns"><b id="btnMin">_</b><b>□</b><b id="btnClose" title="Fermer">×</b></span>
+    </div>
+    <div class="menu" id="menubar">
+      <div class="mitem"><span class="mlabel" data-menu="file"><u>F</u>ichier</span>
+        <ul class="dropdown" id="mFile" hidden>
+          <li><a href="#" data-act="toast" data-msg="Nouveau piège : il y en a déjà un. Juste là. Autour de vous.">Nouveau piège</a></li>
+          <li><a href="https://caillier-romain.fr/">Ouvrir mon portfolio…</a></li>
+          <li><a href="#" data-act="toast" data-msg="Curiosité enregistrée. Merci d'être passé.">Enregistrer la curiosité</a></li>
+          <li class="sep"></li>
+          <li><a href="#" data-act="bsod">Quitter</a></li>
+        </ul>
+      </div>
+      <div class="mitem"><span class="mlabel" data-menu="edit"><u>É</u>dition</span>
+        <ul class="dropdown" id="mEdit" hidden>
+          <li><a href="#" data-act="toast" data-msg="Annuler ? Trop tard, vous êtes déjà dans le piège.">Annuler</a></li>
+          <li><a href="#" data-act="copy" data-copy="caillier-romain.fr">Copier mon lien</a></li>
+          <li><a href="#" data-act="toast" data-msg="Tout est déjà à vous : il suffit de regarder en dessous.">Tout sélectionner</a></li>
+        </ul>
+      </div>
+      <div class="mitem"><span class="mlabel" id="btnHelp" data-menu="help"><u>?</u></span></div>
+    </div>
+    <div class="body">
+
+      <div class="dlg" id="warnDlg">
+        <span class="warn"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L38 36 H2 Z" fill="#ffd13b" stroke="#000" stroke-width="1.8" stroke-linejoin="round"/><rect x="18" y="14" width="4" height="12" fill="#000"/><rect x="18" y="28" width="4" height="4" fill="#000"/></svg></span>
+        <div class="msg"><b>Vous êtes tombé dans le piège.</b><br>Votre seul tort : avoir été curieux. Rassurez-vous, rien n'est conservé.</div>
+      </div>
+      <div class="dlgbtns" id="warnBtns"><a class="b95" href="#" role="button" id="btnOk">OK</a></div>
+
+      <!-- HERO : qui suis-je -->
+      <div class="hero">
+        <div class="cap"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="#fff" stroke="#000"/><circle cx="8" cy="6.5" r="2.3" fill="#000"/><path d="M4 13c0-2.6 2-3.6 4-3.6s4 1 4 3.6" fill="#000"/></svg> Qui suis-je</div>
+        <div class="inner">
+          <div class="avatar"><img src="assets/profil-128p.png" alt="Avatar pixel-art de Romain à son bureau de maker" width="128" height="128"></div>
+          <div class="who">
+            <div class="nm">Romain Caillier</div>
+            <div class="role">Dév &amp; Sécurité · École 42</div>
+            <div class="desc">Je construis des trucs, je cherche leurs failles et parfois je diffuse du Wi-Fi pour les curieux.</div>
+          </div>
+        </div>
+        <div class="seek">
+          <span class="newbadge" aria-hidden="true">NEW!</span>
+          <span class="txt">Je cherche une <b>alternance</b> en <b>développement, sécurité ou DevSecOps</b>.<br><span class="dispo">Disponible dès juin 2027.</span></span>
+        </div>
+      </div>
+
+      <div class="alt"><span class="track"><span class="star">★</span> ALTERNANCE DÈS JUIN 2027 — ON VIENT DE SE RENCONTRER, QUEL HASARD <span class="star">★</span></span></div>
+
+      <fieldset><legend>Contact</legend>
+        <p class="hint">Encore curieux ? Mon code, mes projets et mon CV, c'est par là :</p>
+        <div class="links">
+          <a class="b95" href="https://github.com/rom98759/"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#24292e"/><path d="M10 4a6 6 0 0 0-1.9 11.7c.3.06.4-.13.4-.29v-1c-1.7.37-2-.72-2-.72-.28-.7-.68-.89-.68-.89-.56-.38.04-.37.04-.37.62.04.94.63.94.63.55.94 1.44.67 1.8.51.05-.4.21-.67.39-.82-1.36-.16-2.78-.68-2.78-3.02 0-.67.24-1.21.63-1.64-.06-.16-.27-.78.06-1.62 0 0 .51-.16 1.68.63a5.8 5.8 0 0 1 3.06 0c1.17-.79 1.68-.63 1.68-.63.33.84.12 1.46.06 1.62.39.43.63.97.63 1.64 0 2.35-1.43 2.86-2.79 3.01.22.19.41.56.41 1.13v1.67c0 .16.1.35.41.29A6 6 0 0 0 10 4z" fill="#fff"/></svg><span class="lbl">GitHub</span><span class="u">github.com/rom98759</span></a>
+          <a class="b95" href="https://caillier-romain.fr/"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#007a7a"/><g fill="none" stroke="#fff" stroke-width="1"><circle cx="10" cy="10" r="8"/><ellipse cx="10" cy="10" rx="3.3" ry="8"/><line x1="2" y1="10" x2="18" y2="10"/><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></g></svg><span class="lbl">Portfolio</span><span class="u">caillier-romain.fr</span></a>
+          <a class="b95" href="https://www.linkedin.com/in/romain-caillier"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#0a66c2"/><circle cx="5.5" cy="5.5" r="1.6" fill="#fff"/><rect x="4.1" y="8.3" width="2.8" height="7.6" fill="#fff"/><path d="M8.5 8.3h2.7v1.1c.4-.7 1.3-1.3 2.6-1.3 2.1 0 2.9 1.3 2.9 3.6v4.2h-2.8v-3.8c0-1-.4-1.6-1.3-1.6-.8 0-1.3.5-1.3 1.6v3.8H8.5z" fill="#fff"/></svg><span class="lbl">LinkedIn</span><span class="u">in/romain-caillier</span></a>
+        </div>
+      </fieldset>
+
+      <div class="prog">
+        <div class="lbl">Analyse de votre curiosité… <b id="pct">0%</b></div>
+        <div class="pbar" id="pbar"></div>
+      </div>
+
+      <fieldset><legend>Au passage, détecté sur vous</legend>
+        <div class="field" id="diag"><noscript>Activez JavaScript pour voir ce que votre navigateur révèle, en direct et sans rien envoyer.</noscript></div>
+        <p class="note" style="margin-bottom:0">Mesuré dans votre navigateur, à l'instant. Rien n'est envoyé, stocké, ni relié à vous.</p>
+      </fieldset>
+
+      <div class="status"><span id="st">Piège armé et opérationnel.</span><span class="r" id="cnt">Curieux : 023</span></div>
+      <p class="note">Pour partir : oubliez le réseau « Ce_WiFi_est_un_piege ». Il ne vous en voudra pas.</p>
+
+    </div>
+  </div></div>
+</div>
+
+<!-- start menu -->
+<nav class="startmenu" id="startmenu" hidden>
+  <div class="rail">
+    <div class="side">Romain&nbsp;95</div>
+    <ul>
+      <li><a href="#diag" id="smRun">Exécuter le diagnostic…</a></li>
+      <li><a href="https://caillier-romain.fr/">Mes projets</a></li>
+      <li><a href="https://github.com/rom98759/">Documents (GitHub)</a></li>
+      <div class="sep"></div>
+      <li><a href="#" id="smAbout">À propos…</a></li>
+      <li><a href="#" id="smShutdown">Arrêter…</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- about dialog -->
+<div class="modal" id="about" hidden>
+  <div class="win awin"><div class="in">
+    <div class="tb"><span class="name"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="11" fill="#fff" stroke="#000"/><rect x="1" y="2" width="14" height="3" fill="#000080"/></svg> À propos de piège.exe</span><span class="btns"><b id="aboutClose">×</b></span></div>
+    <div class="body abody">
+      <div class="arow">
+        <span class="logo"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L38 36 H2 Z" fill="#ffd13b" stroke="#000" stroke-width="1.8" stroke-linejoin="round"/><rect x="18" y="14" width="4" height="12" fill="#000"/><rect x="18" y="28" width="4" height="4" fill="#000"/></svg></span>
+        <div>
+          <div class="ver">piège.exe — version 2.0</div>
+          <div style="font-family:var(--mono);font-size:11px;color:#404040">« édition Curiosité »</div>
+          <p>© 2026 Romain Caillier.<br>Aucun curieux n'a été blessé durant cette démo.</p>
+        </div>
+      </div>
+      <div class="dlgbtns"><a class="b95" href="#" id="aboutOk" style="min-width:84px;text-align:center">OK</a></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- taskbar -->
+<div class="task">
+  <span class="start" id="startBtn"><svg viewBox="0 0 18 16" aria-hidden="true"><g transform="skewY(-8)"><path d="M1 4 L7 3 L7 8 L1 9 Z" fill="#e8443a"/><path d="M8 3 L15 2 L15 7 L8 8 Z" fill="#45b556"/><path d="M1 10 L7 9 L7 14 L1 15 Z" fill="#2f7fd0"/><path d="M8 9 L15 8 L15 13 L8 14 Z" fill="#f2c100"/></g></svg>Démarrer</span>
+  <span class="taskbtn"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="11" fill="#fff" stroke="#000"/><rect x="1" y="2" width="14" height="3" fill="#000080"/></svg>piège.exe</span>
+  <span class="clock" id="clock">12:00</span>
+</div>
+
+<!-- BSOD easter egg -->
+<div class="bsod" id="bsod" hidden>
+  <div class="h">Windows</div>
+  <div>Un problème a été détecté et le piège a été interrompu pour éviter toute fuite de curiosité.</div>
+  <div class="k">*** STOP : 0xCUR1EUX (0x0042, 0x2027)<br>CURIOSITY_NOT_HANDLED</div>
+  <div>Vous ne partirez pas si facilement. Au moins, embauchez-moi.</div>
+  <div class="blink">Touchez l'écran pour revenir </div>
+</div>
+
+<script>
+// ---- live client-side diagnostic (punchline instead of fake value) ----
+(function(){
+  var box=document.getElementById("diag");if(!box)return;
+  var ua=navigator.userAgent,os="",br="",m;
+  if(m=ua.match(/Android [\d.]+/))os=m[0];
+  else if(m=ua.match(/(iPhone|iPad)[^;]*OS ([\d_]+)/))os=m[1]+" iOS "+m[2].replace(/_/g,".");
+  else if(/Windows NT 10/.test(ua))os="Windows 10/11";
+  else if(/Mac OS X/.test(ua))os="macOS";
+  else if(/Linux/.test(ua))os="Linux";
+  if(/Firefox\//.test(ua))br="Firefox";else if(/Edg\//.test(ua))br="Edge";
+  else if(/OPR\//.test(ua))br="Opera";else if(/Chrome\//.test(ua))br="Chrome";
+  else if(/Safari\//.test(ua))br="Safari";
+  var sys=(os&&br)?os+" / "+br:(os||br||"");
+  var tz="";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||""}catch(e){}
+  var rows=[
+    ["Système",sys,sys?"":"un appareil mystérieux. J'aime."],
+    ["Langue",navigator.language||"",navigator.language?"":"muet. Prudent."],
+    ["Écran",screen.width+"×"+screen.height,""],
+    ["Fuseau",tz,tz?"Votre horloge a parlé.":"vous gardez vos secrets."]
+  ];
+  box.textContent="";
+  rows.forEach(function(r){
+    var row=document.createElement("div");row.className="rowi";
+    var k=document.createElement("span");k.textContent=r[0];
+    var v=document.createElement("span");v.textContent=r[1]||"indisponible";
+    row.appendChild(k);row.appendChild(v);box.appendChild(row);
+    if(r[2]){var a=document.createElement("span");a.className="an";a.textContent="↳ "+r[2];box.appendChild(a);}
+  });
+  function addRow(k,v,an){var row=document.createElement("div");row.className="rowi";
+    var ks=document.createElement("span");ks.textContent=k;var vs=document.createElement("span");vs.textContent=v;
+    row.appendChild(ks);row.appendChild(vs);box.appendChild(row);
+    if(an){var a=document.createElement("span");a.className="an";a.textContent="↳ "+an;box.appendChild(a);}}
+  if(navigator.getBattery)navigator.getBattery().then(function(b){
+    addRow("Batterie",Math.round(b.level*100)+"%"+(b.charging?" (charge)":""),b.level<.3?"pensez à charger.":"large pour la journée.");
+  }).catch(function(){addRow("Batterie","indisponible","Même moi, je ne peux pas tout savoir.");});
+  else addRow("Batterie","indisponible","Même moi, je ne peux pas tout savoir.");
+})();
+// ---- segmented progress + synced % ----
+(function(){
+  var bar=document.getElementById("pbar"),pct=document.getElementById("pct");if(!bar)return;
+  var reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var total=Math.max(6,Math.floor(bar.clientWidth/11)),n=0;
+  function set(){if(pct)pct.textContent=Math.round(n/total*100)+"%";}
+  function step(){bar.appendChild(document.createElement("i"));n++;set();
+    if(n<total)setTimeout(step,70);else if(pct)pct.textContent="Terminé";}
+  if(reduce){for(var k=0;k<total;k++)bar.appendChild(document.createElement("i"));if(pct)pct.textContent="Terminé";}
+  else step();
+})();
+// ---- taskbar clock ----
+(function(){var c=document.getElementById("clock");if(!c)return;
+  function t(){var d=new Date();c.textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
+  t();setInterval(t,10000);})();
+// ---- start menu ----
+(function(){
+  var btn=document.getElementById("startBtn"),menu=document.getElementById("startmenu");
+  function toggle(open){var show=open===undefined?menu.hidden:open;menu.hidden=!show;btn.classList.toggle("open",show);}
+  btn.addEventListener("click",function(e){e.stopPropagation();toggle();});
+  document.addEventListener("click",function(e){if(!menu.hidden&&!menu.contains(e.target))toggle(false);});
+  document.getElementById("smAbout").addEventListener("click",function(e){e.preventDefault();toggle(false);openAbout();});
+  document.getElementById("smShutdown").addEventListener("click",function(e){e.preventDefault();toggle(false);showBsod();});
+})();
+// ---- easter egg : close button / about / shutdown -> fake BSOD ----
+var bsod=document.getElementById("bsod");
+function showBsod(){bsod.hidden=false;}
+function hideBsod(){bsod.hidden=true;}
+document.getElementById("btnClose").addEventListener("click",showBsod);
+bsod.addEventListener("click",hideBsod);
+document.addEventListener("keydown",function(e){if(!bsod.hidden){hideBsod();}});
+// ---- status-bar helper (transient messages) ----
+var stEl=document.getElementById("st"),stTimer;
+function setStatus(msg){if(!stEl)return;stEl.textContent=msg;clearTimeout(stTimer);
+  stTimer=setTimeout(function(){stEl.textContent="Piège armé et opérationnel.";},4000);}
+// ---- menu-bar dropdowns (Fichier / Édition / ?) ----
+(function(){
+  var bar=document.getElementById("menubar");if(!bar)return;
+  var labels=[].slice.call(bar.querySelectorAll(".mlabel[data-menu]"));
+  var drops={file:document.getElementById("mFile"),edit:document.getElementById("mEdit")};
+  function closeAll(){for(var k in drops)if(drops[k])drops[k].hidden=true;
+    labels.forEach(function(l){l.classList.remove("open");});}
+  labels.forEach(function(l){l.addEventListener("click",function(e){
+    e.stopPropagation();var m=l.getAttribute("data-menu");
+    if(m==="help"){closeAll();openAbout();return;}
+    var d=drops[m],willOpen=d&&d.hidden;closeAll();
+    if(willOpen){d.hidden=false;l.classList.add("open");}
+  });});
+  [].slice.call(bar.querySelectorAll(".dropdown a")).forEach(function(a){a.addEventListener("click",function(e){
+    var act=a.getAttribute("data-act");
+    if(act){e.preventDefault();
+      if(act==="toast")setStatus(a.getAttribute("data-msg"));
+      else if(act==="bsod")showBsod();
+      else if(act==="copy"){var t=a.getAttribute("data-copy");
+        try{navigator.clipboard.writeText(t).then(function(){setStatus("Copié : "+t);},function(){setStatus("À recopier : "+t);});}
+        catch(err){setStatus("À recopier : "+t);}}
+    }
+    closeAll();
+  });});
+  document.addEventListener("click",function(e){if(!bar.contains(e.target))closeAll();});
+})();
+// ---- about dialog ----
+var about=document.getElementById("about");
+function openAbout(){if(about)about.hidden=false;}
+function closeAbout(){if(about)about.hidden=true;}
+document.getElementById("aboutOk").addEventListener("click",function(e){e.preventDefault();closeAbout();});
+document.getElementById("aboutClose").addEventListener("click",closeAbout);
+about.addEventListener("click",function(e){if(e.target===about)closeAbout();});
+// ---- OK on the warning: dismiss + count one more curious soul ----
+document.getElementById("btnOk").addEventListener("click",function(e){
+  e.preventDefault();
+  var d=document.getElementById("warnDlg"),b=document.getElementById("warnBtns");
+  if(d)d.hidden=true;if(b)b.hidden=true;
+  var cnt=document.getElementById("cnt");
+  if(cnt){var m=cnt.textContent.match(/(\d+)/);if(m){var n=(+m[1])+1;cnt.textContent="Curieux : "+("00"+n).slice(-3);}}
+  setStatus("Curiosité enregistrée. Bien joué.");
+});
+</script>
+</body>
+</html>

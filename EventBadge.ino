@@ -76,10 +76,10 @@ void drawResting(uint8_t which) {
   char buf[17];
   switch (which) {
     case 0:
-      printCentered(0, "HONEYPOT ACTIF");
+      printCentered(0, "PIEGE A CURIEUX");
       putGlyph(1, 0, SKULL);
       putGlyph(14, 0, SKULL);
-      snprintf(buf, sizeof(buf), "captures: %u", readConnections());
+      snprintf(buf, sizeof(buf), "curieux: %u", readConnections());
       printCentered(1, buf);
       break;
     case 1:
@@ -89,7 +89,8 @@ void drawResting(uint8_t which) {
       putGlyph(15, 1, CHIP);
       break;
     case 2:
-      printCentered(0, "etudiant 42");
+      lcd.setCursor(0, 0);
+      lcd.print(">_ etudiant 42");
       printCentered(1, "stage pentest");
       break;
     case 3:
@@ -101,21 +102,14 @@ void drawResting(uint8_t which) {
 
 void drawAlert() {
   lcd.clear();
-  printCentered(0, "+1 CAPTURE");
-  putGlyph(2, 0, WIFI);
-  putGlyph(13, 0, WIFI);
-  char buf[17];
-  snprintf(buf, sizeof(buf), "total: %u", readConnections());
-  printCentered(1, buf);
+  printCentered(0, "+1 CURIEUX !");
+  putGlyph(1, 0, WIFI);
+  putGlyph(14, 0, WIFI);
+  printCentered(1, "bienvenue a toi");
 }
 
 void handleRoot() {
   server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
-}
-
-void handleVcf() {
-  server.sendHeader("Content-Disposition", "attachment; filename=\"" CFG_NAME ".vcf\"");
-  server.send_P(200, "text/vcard; charset=utf-8", PORTAL_VCF);
 }
 
 // OS captive-portal probes expect their own success response (Android wants
@@ -150,7 +144,6 @@ void setup() {
   dns.start(53, "*", AP_IP);
 
   server.on("/", handleRoot);
-  server.on("/contact.vcf", handleVcf);
   // Common captive-portal detection URLs across platforms.
   server.on("/generate_204", handleCaptive);
   server.on("/gen_204", handleCaptive);

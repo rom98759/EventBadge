@@ -1,8 +1,10 @@
 # EventBadge
 
-Wearable portfolio badge for tech events: a Wemos D1 mini (ESP8266) drives an
-LCD1602 I²C display that says who I am, and opens a Wi-Fi hotspot whose
-captive portal serves a lightweight portfolio page (no internet needed).
+Wearable portfolio badge for tech events: a Wemos D1 mini (ESP8266) opens a
+Wi-Fi hotspot whose captive portal is a tongue-in-cheek **Windows 95** desktop.
+It springs a friendly "trap" on the curious, introduces Romain (student at
+École 42, looking for an apprenticeship from June 2027), and links to his work.
+An LCD1602 on the badge cycles identity + alternance and counts the curious.
 
 ## Hardware
 
@@ -23,6 +25,35 @@ The backpack pulls SDA/SCL up to 5 V. The ESP8266 tolerates it in practice
 but this is outside its spec: if the bus becomes flaky, add a BSS138 level
 shifter first.
 
+## How it works
+
+- `WIFI_AP` hotspot `Ce_WiFi_est_un_piege` (open), IP 192.168.4.1.
+- A catch-all DNS server + replies to the OS captive-portal probes make the
+  page pop up on its own when a phone joins.
+- The web server serves one self-contained page (`PORTAL_HTML`) for every
+  route. No internet, no external resource: everything is inline, fonts are
+  system fonts, the avatar is an embedded data URI.
+- The LCD cycles four screens (trap + counter, name/role, student 42,
+  alternance June 2027) and flashes `+1 CURIEUX` on each connection. The count
+  is anonymous: no MAC address, name or identifier is read or stored.
+
+## The portal page
+
+- **Source of truth:** `web/index.html` (a standalone page — open it directly
+  or serve it: `cd web && python3 -m http.server 8123`).
+- **Avatar:** `web/assets/profil-128p.png` (128 px, 64-colour, ~9 KB).
+- **Generate the firmware copy:** `python3 web/build.py` → rewrites
+  `portal.h`, embedding the avatar as a data URI. Always edit `index.html`
+  and regenerate; never hand-edit `portal.h`.
+- **Easter eggs:** menu *Fichier* / *Édition* (dropdowns, incl. "Copier mon
+  lien"), **?** opens an "À propos de piège.exe" dialog, **OK** dismisses the
+  warning and bumps the counter, **×** / *Quitter* / *Arrêter* trigger a fake
+  BSOD, **Démarrer** opens a start menu.
+- **Diagnostic:** the "Au passage, détecté sur vous" box is computed in the
+  visitor's own browser (OS/browser, screen, language, timezone, battery) and
+  shown only to them; nothing is sent to or stored on the badge. If a value is
+  unavailable, a punchline is shown instead of a fake one.
+
 ## Libraries and core
 
 - ESP8266 core 3.1.2 (board manager URL
@@ -35,8 +66,17 @@ shifter first.
 arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
 arduino-cli core update-index && arduino-cli core install esp8266:esp8266
 arduino-cli lib install hd44780
+python3 web/build.py          # regenerate portal.h from web/index.html
 arduino-cli compile && arduino-cli upload
 ```
+
+Then join the Wi-Fi `Ce_WiFi_est_un_piege` on a phone; the portal opens on its
+own (on Android a "Sign in to network" notification may need a tap).
+
+## Config
+
+`config.h` holds the SSID and the strings shown on the **LCD** (name, role,
+school, alternance timing). The portal's own text lives in `web/index.html`.
 
 ## Troubleshooting
 
@@ -44,3 +84,5 @@ arduino-cli compile && arduino-cli upload
   (lost on unplug) or log out and back in after joining `dialout`.
 - Serial garbage at boot is the ROM bootloader at 74880 baud; the sketch
   logs at 115200.
+- Portal doesn't auto-open: some phones only show a notification to tap; the
+  page is always reachable at `http://192.168.4.1`.
