@@ -34,8 +34,12 @@ shifter first.
   route. No internet, no external resource: everything is inline, fonts are
   system fonts, the avatar is an embedded data URI.
 - The LCD cycles four screens (trap + counter, name/role, student 42,
-  alternance June 2027) and flashes `+1 CURIEUX` on each connection. The count
-  is anonymous: no MAC address, name or identifier is read or stored.
+  alternance June 2027) and flashes `+1 CURIEUX` on each connection.
+- Two anonymous counters are kept (`connections`, `clicks`), persisted in
+  EEPROM-emulated flash (debounced writes) so they survive a reboot. The page
+  reads them from `/count` ("connections,clicks") and a link click fires a
+  beacon to `/click`. Only totals are stored: no MAC address, device name or
+  any identifier is ever read or kept.
 
 ## The portal page
 

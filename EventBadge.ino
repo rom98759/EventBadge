@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
+#include <EEPROM.h>
 #include <Wire.h>
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_I2Cexp.h>
@@ -27,9 +28,18 @@ uint8_t glyphs[][8] = {
   {0b00000, 0b01110, 0b10001, 0b10101, 0b10001, 0b01110, 0b00000, 0b00000},  // chip
 };
 
-// Only an anonymous count. Set from the AP connect event (ISR-like context),
-// so it is volatile and read with interrupts briefly disabled.
+// Anonymous counts, kept across reboots in EEPROM. `connections` is set from
+// the AP connect event (ISR-like context), so it is volatile and read with
+// interrupts briefly disabled. `clicks` is bumped from the web handler.
 volatile uint16_t connections = 0;
+uint16_t clicks = 0;
+
+// Persistence: a tiny record in EEPROM-emulated flash, saved debounced.
+struct Stats { uint16_t magic; uint16_t conn; uint16_t clk; };
+const uint16_t STATS_MAGIC = 0x4201;
+const uint32_t SAVE_AFTER_MS = 8000;  // debounce flash writes
+bool statsDirty = false;
+uint32_t statsChangedAt = 0;
 
 uint8_t screen = 0;
 uint32_t screenAt = 0;
@@ -69,6 +79,26 @@ uint16_t readConnections() {
   uint16_t c = connections;
   interrupts();
   return c;
+}
+
+void loadStats() {
+  Stats s;
+  EEPROM.get(0, s);
+  if (s.magic == STATS_MAGIC) {
+    connections = s.conn;
+    clicks = s.clk;
+  }
+}
+
+void saveStats() {
+  Stats s = { STATS_MAGIC, readConnections(), clicks };
+  EEPROM.put(0, s);
+  EEPROM.commit();
+}
+
+void markDirty() {
+  statsDirty = true;
+  statsChangedAt = millis();
 }
 
 void drawResting(uint8_t which) {
@@ -112,6 +142,20 @@ void handleRoot() {
   server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
 }
 
+// "connections,clicks" — the page shows these as the real counters.
+void handleCount() {
+  char buf[16];
+  snprintf(buf, sizeof(buf), "%u,%u", readConnections(), clicks);
+  server.send(200, "text/plain", buf);
+}
+
+// Beacon fired by the page when a contact link is followed.
+void handleClick() {
+  clicks++;
+  markDirty();
+  server.send(204, "text/plain", "");
+}
+
 // OS captive-portal probes expect their own success response (Android wants
 // HTTP 204, iOS wants the word "Success"). Serving the portal HTML with 200
 // instead is what makes the phone decide it is behind a portal and pop the
@@ -123,6 +167,9 @@ void handleCaptive() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
+
+  EEPROM.begin(sizeof(Stats));
+  loadStats();
 
   int status = lcd.begin(16, 2);
   if (status) hd44780::fatalError(status);
@@ -138,12 +185,15 @@ void setup() {
     [](const WiFiEventSoftAPModeStationConnected &) {
       connections++;
       alertPending = true;
+      markDirty();
     });
 
   dns.setErrorReplyCode(DNSReplyCode::NoError);
   dns.start(53, "*", AP_IP);
 
   server.on("/", handleRoot);
+  server.on("/count", handleCount);
+  server.on("/click", handleClick);
   // Common captive-portal detection URLs across platforms.
   server.on("/generate_204", handleCaptive);
   server.on("/gen_204", handleCaptive);
@@ -164,6 +214,12 @@ void loop() {
   server.handleClient();
 
   uint32_t now = millis();
+
+  // Persist the counts a few seconds after the last change (limits flash wear).
+  if (statsDirty && now - statsChangedAt >= SAVE_AFTER_MS) {
+    statsDirty = false;
+    saveStats();
+  }
 
   if (alertPending) {
     alertPending = false;
