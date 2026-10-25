@@ -2,7 +2,8 @@
 #include <pgmspace.h>
 
 // Full captive-portal page, generated from web/index.html by web/build.py
-// with the avatar embedded as a data URI. Edit index.html, then rerun.
+// with images (avatar, QR codes) embedded as data URIs. Edit index.html,
+// then rerun this script.
 const char PORTAL_HTML[] PROGMEM = R"HTML(
 <!doctype html>
 <html lang="fr">
@@ -107,10 +108,11 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
 /* contact */
 .hint{font-size:11px;color:#303030;margin:0 0 7px}
 .links{display:grid;gap:8px}
-.links a{display:flex;align-items:center;gap:9px;padding:9px 12px}
-.links a svg{width:20px;height:20px;flex:none}
-.links a .lbl{font-weight:700;flex:none}
-.links a .u{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--navy);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
+.links .b95{display:flex;align-items:center;gap:9px;padding:9px 12px;width:100%;text-align:left}
+.links .b95 svg{width:20px;height:20px;flex:none}
+.links .b95 .lbl{font-weight:700;flex:none}
+.links .b95 .u{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--navy);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
+.site{text-align:center;font:700 19px var(--mono);color:var(--navy);background:#fff;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:11px 8px;margin:0 0 12px;user-select:all;word-break:break-all}
 
 /* progress + diagnostic (secondary) */
 .prog{margin:10px 0 2px}
@@ -182,7 +184,7 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
       <div class="mitem"><span class="mlabel" data-menu="file"><u>F</u>ichier</span>
         <ul class="dropdown" id="mFile" hidden>
           <li><a href="#" data-act="toast" data-msg="Nouveau piège : il y en a déjà un. Juste là. Autour de vous.">Nouveau piège</a></li>
-          <li><a target="_blank" rel="noopener" href="https://caillier-romain.fr/">Ouvrir mon portfolio…</a></li>
+          <li><a href="#" data-copy="https://caillier-romain.fr/">Copier mon portfolio</a></li>
           <li><a href="#" data-act="toast" data-msg="Curiosité enregistrée. Merci d'être passé.">Enregistrer la curiosité</a></li>
           <li class="sep"></li>
           <li><a href="#" data-act="bsod">Quitter</a></li>
@@ -191,7 +193,7 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
       <div class="mitem"><span class="mlabel" data-menu="edit"><u>É</u>dition</span>
         <ul class="dropdown" id="mEdit" hidden>
           <li><a href="#" data-act="toast" data-msg="Annuler ? Trop tard, vous êtes déjà dans le piège.">Annuler</a></li>
-          <li><a href="#" data-act="copy" data-copy="caillier-romain.fr">Copier mon lien</a></li>
+          <li><a href="#" data-copy="https://caillier-romain.fr/">Copier mon lien</a></li>
           <li><a href="#" data-act="toast" data-msg="Tout est déjà à vous : il suffit de regarder en dessous.">Tout sélectionner</a></li>
         </ul>
       </div>
@@ -225,11 +227,13 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
       <div class="alt"><span class="track"><span class="star">★</span> ALTERNANCE DÈS JUIN 2027 — ON VIENT DE SE RENCONTRER, QUEL HASARD <span class="star">★</span></span></div>
 
       <fieldset><legend>Contact</legend>
-        <p class="hint">Encore curieux ? Mon code, mes projets et mon CV, c'est par là :</p>
+        <p class="hint">Les liens ne s'ouvrent pas ici (réseau sans Internet). Le plus simple : retiens mon site, tout y est.</p>
+        <div class="site">caillier-romain.fr</div>
+        <p class="hint">Ou appuie pour copier, puis colle dans ton navigateur :</p>
         <div class="links">
-          <a class="b95" target="_blank" rel="noopener" href="https://github.com/rom98759/"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#24292e"/><path d="M10 4a6 6 0 0 0-1.9 11.7c.3.06.4-.13.4-.29v-1c-1.7.37-2-.72-2-.72-.28-.7-.68-.89-.68-.89-.56-.38.04-.37.04-.37.62.04.94.63.94.63.55.94 1.44.67 1.8.51.05-.4.21-.67.39-.82-1.36-.16-2.78-.68-2.78-3.02 0-.67.24-1.21.63-1.64-.06-.16-.27-.78.06-1.62 0 0 .51-.16 1.68.63a5.8 5.8 0 0 1 3.06 0c1.17-.79 1.68-.63 1.68-.63.33.84.12 1.46.06 1.62.39.43.63.97.63 1.64 0 2.35-1.43 2.86-2.79 3.01.22.19.41.56.41 1.13v1.67c0 .16.1.35.41.29A6 6 0 0 0 10 4z" fill="#fff"/></svg><span class="lbl">GitHub</span><span class="u">github.com/rom98759</span></a>
-          <a class="b95" target="_blank" rel="noopener" href="https://caillier-romain.fr/"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#007a7a"/><g fill="none" stroke="#fff" stroke-width="1"><circle cx="10" cy="10" r="8"/><ellipse cx="10" cy="10" rx="3.3" ry="8"/><line x1="2" y1="10" x2="18" y2="10"/><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></g></svg><span class="lbl">Portfolio</span><span class="u">caillier-romain.fr</span></a>
-          <a class="b95" target="_blank" rel="noopener" href="https://www.linkedin.com/in/romain-caillier"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#0a66c2"/><circle cx="5.5" cy="5.5" r="1.6" fill="#fff"/><rect x="4.1" y="8.3" width="2.8" height="7.6" fill="#fff"/><path d="M8.5 8.3h2.7v1.1c.4-.7 1.3-1.3 2.6-1.3 2.1 0 2.9 1.3 2.9 3.6v4.2h-2.8v-3.8c0-1-.4-1.6-1.3-1.6-.8 0-1.3.5-1.3 1.6v3.8H8.5z" fill="#fff"/></svg><span class="lbl">LinkedIn</span><span class="u">in/romain-caillier</span></a>
+          <button type="button" class="b95" data-copy="https://github.com/rom98759/"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#24292e"/><path d="M10 4a6 6 0 0 0-1.9 11.7c.3.06.4-.13.4-.29v-1c-1.7.37-2-.72-2-.72-.28-.7-.68-.89-.68-.89-.56-.38.04-.37.04-.37.62.04.94.63.94.63.55.94 1.44.67 1.8.51.05-.4.21-.67.39-.82-1.36-.16-2.78-.68-2.78-3.02 0-.67.24-1.21.63-1.64-.06-.16-.27-.78.06-1.62 0 0 .51-.16 1.68.63a5.8 5.8 0 0 1 3.06 0c1.17-.79 1.68-.63 1.68-.63.33.84.12 1.46.06 1.62.39.43.63.97.63 1.64 0 2.35-1.43 2.86-2.79 3.01.22.19.41.56.41 1.13v1.67c0 .16.1.35.41.29A6 6 0 0 0 10 4z" fill="#fff"/></svg><span class="lbl">GitHub</span><span class="u">github.com/rom98759</span></button>
+          <button type="button" class="b95" data-copy="https://caillier-romain.fr/"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#007a7a"/><g fill="none" stroke="#fff" stroke-width="1"><circle cx="10" cy="10" r="8"/><ellipse cx="10" cy="10" rx="3.3" ry="8"/><line x1="2" y1="10" x2="18" y2="10"/><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></g></svg><span class="lbl">Portfolio</span><span class="u">caillier-romain.fr</span></button>
+          <button type="button" class="b95" data-copy="https://www.linkedin.com/in/romain-caillier"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#0a66c2"/><circle cx="5.5" cy="5.5" r="1.6" fill="#fff"/><rect x="4.1" y="8.3" width="2.8" height="7.6" fill="#fff"/><path d="M8.5 8.3h2.7v1.1c.4-.7 1.3-1.3 2.6-1.3 2.1 0 2.9 1.3 2.9 3.6v4.2h-2.8v-3.8c0-1-.4-1.6-1.3-1.6-.8 0-1.3.5-1.3 1.6v3.8H8.5z" fill="#fff"/></svg><span class="lbl">LinkedIn</span><span class="u">in/romain-caillier</span></button>
         </div>
       </fieldset>
 
@@ -256,8 +260,8 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
     <div class="side">Romain&nbsp;95</div>
     <ul>
       <li><a href="#diag" id="smRun">Exécuter le diagnostic…</a></li>
-      <li><a target="_blank" rel="noopener" href="https://caillier-romain.fr/">Mes projets</a></li>
-      <li><a target="_blank" rel="noopener" href="https://github.com/rom98759/">Documents (GitHub)</a></li>
+      <li><a href="#" data-copy="https://caillier-romain.fr/">Mes projets</a></li>
+      <li><a href="#" data-copy="https://github.com/rom98759/">Documents (GitHub)</a></li>
       <div class="sep"></div>
       <li><a href="#" id="smAbout">À propos…</a></li>
       <li><a href="#" id="smShutdown">Arrêter…</a></li>
@@ -393,6 +397,18 @@ document.addEventListener("keydown",function(e){if(!bsod.hidden){hideBsod();}});
 var stEl=document.getElementById("st"),stTimer;
 function setStatus(msg){if(!stEl)return;stEl.textContent=msg;clearTimeout(stTimer);
   stTimer=setTimeout(function(){stEl.textContent="Piège armé et opérationnel.";},4000);}
+// Counting beacon + clipboard copy. The portal is http (not a secure context),
+// so navigator.clipboard may be unavailable: fall back to execCommand.
+function fireBeacon(){try{if(navigator.sendBeacon)navigator.sendBeacon("/click");
+  else fetch("/click",{method:"POST",keepalive:true}).catch(function(){});}catch(e){}}
+function copyText(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)
+    return navigator.clipboard.writeText(t).then(function(){return true;},_exec);
+  return Promise.resolve(_exec());
+  function _exec(){try{var ta=document.createElement("textarea");ta.value=t;ta.setAttribute("readonly","");
+    ta.style.position="fixed";ta.style.top="-1000px";document.body.appendChild(ta);ta.select();
+    var ok=document.execCommand("copy");document.body.removeChild(ta);return ok;}catch(e){return false;}}
+}
 // ---- menu-bar dropdowns (Fichier / Édition / ?) ----
 (function(){
   var bar=document.getElementById("menubar");if(!bar)return;
@@ -411,9 +427,6 @@ function setStatus(msg){if(!stEl)return;stEl.textContent=msg;clearTimeout(stTime
     if(act){e.preventDefault();
       if(act==="toast")setStatus(a.getAttribute("data-msg"));
       else if(act==="bsod")showBsod();
-      else if(act==="copy"){var t=a.getAttribute("data-copy");
-        try{navigator.clipboard.writeText(t).then(function(){setStatus("Copié : "+t);},function(){setStatus("À recopier : "+t);});}
-        catch(err){setStatus("À recopier : "+t);}}
     }
     closeAll();
   });});
@@ -437,16 +450,21 @@ document.getElementById("btnOk").addEventListener("click",function(e){
 (function(){
   var cnt=document.getElementById("cnt");
   function pad(n){return ("00"+n).slice(-3);}
-  try{fetch("/count",{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
-    var p=t.split(",");
-    if(cnt&&p[0]!=="")cnt.textContent="Curieux : "+pad(+p[0])+(p.length>1?" · liens "+(+p[1]):"");
+  try{fetch("/count",{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){
+    var p=t.split(","),c=parseInt(p[0],10),k=parseInt(p[1],10);
+    if(cnt&&!isNaN(c))cnt.textContent="Curieux : "+pad(c)+(!isNaN(k)?" · liens "+k:"");
   }).catch(function(){});}catch(e){}
-  // Count link clicks on the badge without blocking navigation.
+  // Copy-to-clipboard for any [data-copy] control (links can't open here).
   document.addEventListener("click",function(e){
-    var a=e.target&&e.target.closest?e.target.closest('a[href^="http"]'):null;
-    if(!a)return;
-    try{if(navigator.sendBeacon)navigator.sendBeacon("/click");
-      else fetch("/click",{method:"POST",keepalive:true}).catch(function(){});}catch(err){}
+    var el=e.target&&e.target.closest?e.target.closest("[data-copy]"):null;
+    if(!el)return;
+    e.preventDefault();
+    fireBeacon();
+    copyText(el.getAttribute("data-copy")).then(function(ok){
+      setStatus(ok?"Copié ! Colle-le dans ton navigateur.":"Sélectionne l'adresse pour la copier.");
+    });
+    var sm=document.getElementById("startmenu");if(sm)sm.hidden=true;
+    var sb=document.getElementById("startBtn");if(sb)sb.classList.remove("open");
   },true);
 })();
 </script>

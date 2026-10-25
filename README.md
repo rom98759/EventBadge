@@ -46,9 +46,16 @@ shifter first.
 - **Source of truth:** `web/index.html` (a standalone page — open it directly
   or serve it: `cd web && python3 -m http.server 8123`).
 - **Avatar:** `web/assets/profil-128p.png` (128 px, 64-colour, ~9 KB).
+- **Reaching the links:** a captive-portal mini-browser has no internet and
+  won't open new tabs, so tapping a link just fails — and QR codes are useless
+  when the visitor is already on the phone that shows them. Instead the page
+  highlights one short memorable address (`caillier-romain.fr`, which links to
+  everything) and the links are **tap-to-copy** buttons (clipboard, with an
+  execCommand fallback since the portal is http, not a secure context): copy,
+  leave the Wi-Fi, paste in a real browser.
 - **Generate the firmware copy:** `python3 web/build.py` → rewrites
-  `portal.h`, embedding the avatar as a data URI. Always edit `index.html`
-  and regenerate; never hand-edit `portal.h`.
+  `portal.h`, embedding every `assets/*.png` (the avatar) as data URIs.
+  Always edit `index.html` and regenerate; never hand-edit `portal.h`.
 - **Easter eggs:** menu *Fichier* / *Édition* (dropdowns, incl. "Copier mon
   lien"), **?** opens an "À propos de piège.exe" dialog, **OK** dismisses the
   warning and bumps the counter, **×** / *Quitter* / *Arrêter* trigger a fake
