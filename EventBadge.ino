@@ -18,12 +18,13 @@ DNSServer dns;
 ESP8266WebServer server(80);
 WiFiEventHandler onConnect;
 
-enum Glyph : uint8_t { SKULL, WIFI, ARROW };
+enum Glyph : uint8_t { SKULL, WIFI, DOT, CHIP };
 
 uint8_t glyphs[][8] = {
-  {0b01110, 0b11111, 0b10101, 0b11111, 0b01110, 0b01010, 0b00000, 0b00000},  // skull
-  {0b00000, 0b00001, 0b00011, 0b00111, 0b01111, 0b11111, 0b00000, 0b00000},  // wifi bars
-  {0b00100, 0b01110, 0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00000},  // up arrow
+  {0b01110, 0b11111, 0b10101, 0b11111, 0b10101, 0b01110, 0b01010, 0b00000},  // skull
+  {0b00000, 0b10000, 0b10100, 0b10101, 0b10101, 0b10101, 0b00000, 0b00000},  // wifi bars
+  {0b00000, 0b00000, 0b00110, 0b01111, 0b01111, 0b00110, 0b00000, 0b00000},  // middle dot
+  {0b00000, 0b01110, 0b10001, 0b10101, 0b10001, 0b01110, 0b00000, 0b00000},  // chip
 };
 
 // Only an anonymous count. Set from the AP connect event (ISR-like context),
@@ -40,6 +41,19 @@ bool alertPending = false;
 void printLine(uint8_t row, const char *text) {
   char buf[17];
   snprintf(buf, sizeof(buf), "%-16s", text);
+  lcd.setCursor(0, row);
+  lcd.print(buf);
+}
+
+// Center text on a 16-char row, blanking the rest.
+void printCentered(uint8_t row, const char *text) {
+  char buf[17];
+  int len = strlen(text);
+  if (len > 16) len = 16;
+  int pad = (16 - len) / 2;
+  memset(buf, ' ', 16);
+  memcpy(buf + pad, text, len);
+  buf[16] = '\0';
   lcd.setCursor(0, row);
   lcd.print(buf);
 }
@@ -62,30 +76,37 @@ void drawResting(uint8_t which) {
   char buf[17];
   switch (which) {
     case 0:
-      printLine(0, " HONEYPOT ACTIF");
-      putGlyph(0, 0, SKULL);
-      snprintf(buf, sizeof(buf), "  pieges: %u", readConnections());
-      printLine(1, buf);
-      putGlyph(0, 1, WIFI);
+      printCentered(0, "HONEYPOT ACTIF");
+      putGlyph(1, 0, SKULL);
+      putGlyph(14, 0, SKULL);
+      snprintf(buf, sizeof(buf), "captures: %u", readConnections());
+      printCentered(1, buf);
       break;
     case 1:
-      printLine(0, CFG_NAME);
-      printLine(1, CFG_ROLE);
+      printCentered(0, CFG_NAME);
+      printCentered(1, CFG_ROLE);
+      putGlyph(0, 1, CHIP);
+      putGlyph(15, 1, CHIP);
       break;
     case 2:
-      printLine(0, CFG_SCHOOL);
-      printLine(1, "cherche alternance");
+      printCentered(0, "etudiant 42");
+      printCentered(1, "stage pentest");
+      break;
+    case 3:
+      printCentered(0, ">> ALTERNANCE <<");
+      printCentered(1, "des juin 2027");
       break;
   }
 }
 
 void drawAlert() {
   lcd.clear();
-  printLine(0, " CIBLE +1 !");
-  putGlyph(0, 0, ARROW);
+  printCentered(0, "+1 CAPTURE");
+  putGlyph(2, 0, WIFI);
+  putGlyph(13, 0, WIFI);
   char buf[17];
-  snprintf(buf, sizeof(buf), "  total: %u", readConnections());
-  printLine(1, buf);
+  snprintf(buf, sizeof(buf), "total: %u", readConnections());
+  printCentered(1, buf);
 }
 
 void handleRoot() {
@@ -97,11 +118,12 @@ void handleVcf() {
   server.send_P(200, "text/vcard; charset=utf-8", PORTAL_VCF);
 }
 
-// Captive-portal probes (and anything else) get redirected to the portal so
-// the page pops up on its own.
+// OS captive-portal probes expect their own success response (Android wants
+// HTTP 204, iOS wants the word "Success"). Serving the portal HTML with 200
+// instead is what makes the phone decide it is behind a portal and pop the
+// page open on its own, rather than just showing a silent "no internet".
 void handleCaptive() {
-  server.sendHeader("Location", "http://192.168.4.1/", true);
-  server.send(302, "text/plain", "");
+  server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
 }
 
 void setup() {
@@ -173,7 +195,7 @@ void loop() {
   }
 
   if (now - screenAt >= SCREEN_MS) {
-    screen = (screen + 1) % 3;
+    screen = (screen + 1) % 4;
     screenAt = now;
     drawResting(screen);
   }
