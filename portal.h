@@ -112,7 +112,9 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
 .links .b95 svg{width:20px;height:20px;flex:none}
 .links .b95 .lbl{font-weight:700;flex:none}
 .links .b95 .u{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--navy);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
-.site{text-align:center;font:700 19px var(--mono);color:var(--navy);background:#fff;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:11px 8px;margin:0 0 12px;user-select:all;word-break:break-all}
+.site{text-align:center;font:700 19px var(--mono);color:var(--navy);background:#fff;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:11px 8px;margin:0 0 12px;user-select:all;word-break:break-all;cursor:pointer}
+.copied{color:#0a7a20;font-weight:700}
+.warn{color:#b5121b;font-weight:700}
 
 /* progress + diagnostic (secondary) */
 .prog{margin:10px 0 2px}
@@ -228,7 +230,7 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
 
       <fieldset><legend>Contact</legend>
         <p class="hint">Les liens ne s'ouvrent pas ici (réseau sans Internet). Le plus simple : retiens mon site, tout y est.</p>
-        <div class="site">caillier-romain.fr</div>
+        <div class="site" role="button" tabindex="0" data-copy="https://caillier-romain.fr/">caillier-romain.fr</div>
         <p class="hint">Ou appuie pour copier, puis colle dans ton navigateur :</p>
         <div class="links">
           <button type="button" class="b95" data-copy="https://github.com/rom98759/"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#24292e"/><path d="M10 4a6 6 0 0 0-1.9 11.7c.3.06.4-.13.4-.29v-1c-1.7.37-2-.72-2-.72-.28-.7-.68-.89-.68-.89-.56-.38.04-.37.04-.37.62.04.94.63.94.63.55.94 1.44.67 1.8.51.05-.4.21-.67.39-.82-1.36-.16-2.78-.68-2.78-3.02 0-.67.24-1.21.63-1.64-.06-.16-.27-.78.06-1.62 0 0 .51-.16 1.68.63a5.8 5.8 0 0 1 3.06 0c1.17-.79 1.68-.63 1.68-.63.33.84.12 1.46.06 1.62.39.43.63.97.63 1.64 0 2.35-1.43 2.86-2.79 3.01.22.19.41.56.41 1.13v1.67c0 .16.1.35.41.29A6 6 0 0 0 10 4z" fill="#fff"/></svg><span class="lbl">GitHub</span><span class="u">github.com/rom98759</span></button>
@@ -460,8 +462,17 @@ document.getElementById("btnOk").addEventListener("click",function(e){
     if(!el)return;
     e.preventDefault();
     fireBeacon();
+    var fb=(el.querySelector&&el.querySelector(".u"))||el;
     copyText(el.getAttribute("data-copy")).then(function(ok){
-      setStatus(ok?"Copié ! Colle-le dans ton navigateur.":"Sélectionne l'adresse pour la copier.");
+      setStatus(ok?"Copié ! Colle-le dans ton navigateur.":"Sélectionne l'adresse, puis copie-la.");
+      if(fb){
+        if(!fb.getAttribute("data-full"))fb.setAttribute("data-full",fb.textContent);
+        fb.textContent=ok?"✓ copié !":"à sélectionner";
+        fb.classList.add(ok?"copied":"warn");
+        clearTimeout(fb._t);fb._t=setTimeout(function(){
+          fb.textContent=fb.getAttribute("data-full");fb.classList.remove("copied","warn");
+        },1800);
+      }
     });
     var sm=document.getElementById("startmenu");if(sm)sm.hidden=true;
     var sb=document.getElementById("startBtn");if(sb)sb.classList.remove("open");
