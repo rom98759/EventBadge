@@ -4,6 +4,10 @@
 #define CFG_SSID "Ce_WiFi_est_un_piege"
 #define CFG_MAX_CLIENTS 8
 
+// 1 = print every HTTP request (host, path, user agent) on the USB serial, to
+// see which captive-portal probes a phone sends. Nothing is stored.
+#define CFG_LOG_HTTP 0
+
 #define CFG_NAME "Romain"
 #define CFG_ROLE "Dev + Pentest"
 #define CFG_SCHOOL "Ecole 42 Angouleme"

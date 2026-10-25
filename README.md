@@ -27,7 +27,8 @@ shifter first.
 
 ## How it works
 
-- `WIFI_AP` hotspot `Ce_WiFi_est_un_piege` (open), IP 192.168.4.1.
+- `WIFI_AP` hotspot `Ce_WiFi_est_un_piege` (open), IP 4.3.2.1 (not a private address:
+  some Android builds skip portal detection when the probe resolves to one).
 - A catch-all DNS server + replies to the OS captive-portal probes make the
   page pop up on its own when a phone joins.
 - The web server serves one self-contained page (`PORTAL_HTML`) for every
@@ -96,4 +97,4 @@ school, alternance timing). The portal's own text lives in `web/index.html`.
 - Serial garbage at boot is the ROM bootloader at 74880 baud; the sketch
   logs at 115200.
 - Portal doesn't auto-open: some phones only show a notification to tap; the
-  page is always reachable at `http://192.168.4.1`.
+  page is always reachable at `http://4.3.2.1`.

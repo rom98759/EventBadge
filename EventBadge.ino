@@ -9,7 +9,11 @@
 #include "config.h"
 #include "portal.h"
 
-const IPAddress AP_IP(192, 168, 4, 1);
+// Deliberately not a private address: some Android builds (seen on a Samsung
+// S23, Android 16) treat a probe hostname resolving to a private IP as "no
+// internet" and never send the captive-portal probe. The network is isolated,
+// so this public-looking address is never routed anywhere.
+const IPAddress AP_IP(4, 3, 2, 1);
 const uint32_t SCREEN_MS = 4500;   // time on each resting screen
 const uint32_t ALERT_MS = 3000;    // time the "new connection" alert stays up
 const uint32_t FLASH_MS = 160;     // backlight blink half-period during an alert
@@ -138,7 +142,17 @@ void drawAlert() {
   printCentered(1, "bienvenue a toi");
 }
 
+void logRequest(const char *reply) {
+#if CFG_LOG_HTTP
+  Serial.printf("[http] %s %s%s -> %s | %s\n",
+                server.method() == HTTP_GET ? "GET" : "OTHER",
+                server.hostHeader().c_str(), server.uri().c_str(), reply,
+                server.header("User-Agent").c_str());
+#endif
+}
+
 void handleRoot() {
+  logRequest("portal");
   server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
 }
 
@@ -161,6 +175,7 @@ void handleClick() {
 // instead is what makes the phone decide it is behind a portal and pop the
 // page open on its own, rather than just showing a silent "no internet".
 void handleCaptive() {
+  logRequest("portal (probe)");
   server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
 }
 
@@ -191,6 +206,7 @@ void setup() {
   dns.setErrorReplyCode(DNSReplyCode::NoError);
   dns.start(53, "*", AP_IP);
 
+  server.collectHeaders("User-Agent");
   server.on("/", handleRoot);
   server.on("/count", handleCount);
   server.on("/click", handleClick);
