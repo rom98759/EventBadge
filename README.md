@@ -14,7 +14,7 @@ and 39 links copied.
 - **Captive portal** that pops up on its own when a phone joins: a `piege.exe`
   Win95 window with a warning dialog, who I am, a "find me" photo, tap-to-copy
   links, a downloadable contact card and a browser self-diagnostic shown only
-  to the visitor. Fully offline (inline CSS/JS, embedded images).
+  to the visitor. Fully offline (inline CSS/JS, images served by the badge).
 - **Rotating hotspot names** from a list (fixed / in turn / random every N
   minutes, optionally only when nobody is connected), switchable live.
 - **LCD 16×2**: "connect to" + the scrolling hotspot name, name/role,
@@ -45,12 +45,12 @@ Measured on the badge (core 3.1.2, default `4MB (FS:2MB OTA:~1019KB)` layout).
 
 | Resource | Use | Notes |
 |---|---|---|
-| Sketch flash | 417 KB / 1 MB (39 %) | the portal page alone is ~78 KB |
-| Global RAM | 31.8 KB / 80 KB (39 %) | |
+| Sketch flash | 384 KB / 1 MB (37 %) | portal page + images ~45 KB |
+| Global RAM | 32.1 KB / 80 KB (39 %) | lwIP "Higher Bandwidth" (1460-byte MSS) |
 | Free heap at runtime | 42.8 KB, largest block 42.2 KB | no fragmentation; shown live in `/admin` |
 | IRAM | 60.6 KB / 64 KB (92 %) | little room left for `IRAM_ATTR` code |
 | Filesystem | 40 KB / 2 MB used | event log capped at 1 MB = ~65 000 events (16 B each) |
-| Portal page | 80 KB, ~0.75 s to load | served from flash (`PROGMEM`) |
+| Portal page | 10 KB gzipped + 35 KB images | from flash (`PROGMEM`); images cached by the phone, page revalidated by ETag |
 | Phones at once | 8 | ESP8266 SDK maximum |
 | Power (estimate) | ~80–100 mA at 5 V (~0.5 W) | Wi-Fi AP ~70 mA + LCD backlight ~20 mA; ≈ 50 h on a 10 000 mAh power bank. Not yet measured with a USB meter. |
 
@@ -82,14 +82,17 @@ without it and the screen is brought up whenever it reappears on the bus.
 - **Network:** open `WIFI_AP`, IP 4.3.2.1 (deliberately not a private address:
   some Android builds skip portal detection when the probe resolves to one). A
   catch-all DNS server plus replies to the OS connectivity probes make the
-  portal open on its own. Every unknown route serves the portal.
+  portal open on its own. Probes and every unknown route or hostname get a
+  tiny 302 to `http://4.3.2.1/`: serving the full page to each probe kept the
+  single-threaded loop (DNS included) busy and made connecting slow.
 - **Hotspot names** (`WifiNames.cpp`): up to 16 names saved to `/wifi.txt`.
   Defaults come from `CFG_SSIDS`; editing them in `config.h` and flashing
   replaces a list saved with older defaults. Changing the name restarts the
   AP, which drops connected phones. Every name ever used is kept so old stats
   still show names.
-- **Portal** (`web/index.html` → `portal.h`): `web/build.py` embeds every
-  `assets/*.png|jpg` as a data URI. Edit `index.html` and regenerate; never
+- **Portal** (`web/index.html` → `portal.h`): `web/build.py` gzips the page
+  and turns every `assets/*.png|jpg` into its own file at a content-hash URL
+  (`/i/<hash>.jpg`), cached for a year by phones. Edit `index.html` and regenerate; never
   edit `portal.h` by hand.
 - **Reaching the links:** a captive-portal window has no internet and cannot
   open the real browser (Android keeps http(s) links in its own Wi-Fi-bound
@@ -148,7 +151,8 @@ arduino-cli core update-index && arduino-cli core install esp8266:esp8266
 arduino-cli lib install hd44780
 ```
 
-`sketch.yaml` sets the board (`esp8266:esp8266:d1_mini`) and port. Uploads use
+`sketch.yaml` sets the board (`esp8266:esp8266:d1_mini:ip=hb2f`, lwIP
+"Higher Bandwidth") and port. Uploads use
 "Only Sketch", which keeps the counters, the log and the saved hotspot names.
 
 ## Troubleshooting
