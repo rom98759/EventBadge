@@ -11,6 +11,7 @@
 #include "portal.h"
 #include "admin.h"
 #include "EventLog.h"
+#include "WifiNames.h"
 
 #if __has_include("secrets.h")
 #include "secrets.h"
@@ -215,6 +216,15 @@ void logRequest(const char *reply) {
 }
 
 // HTTP handlers only see an IP; the AP's station list maps it back to the MAC.
+// Changing the name restarts the AP, which drops every connected phone.
+void startAp() {
+  WiFi.softAP(ssidCurrent(), nullptr, 1, false, CFG_MAX_CLIENTS);
+  logEvent(EV_SSID, 0, ssidHash(ssidCurrent()), 0);
+  Serial.printf("AP \"%s\" up at %s\n", ssidCurrent(), AP_IP.toString().c_str());
+}
+
+uint32_t apRestartAt = 0;  // deferred so the admin's reply gets out before the AP drops
+
 uint32_t clientVisitor() {
   IPAddress ip = server.client().remoteIP();
   uint32_t v = 0;
@@ -290,6 +300,19 @@ void handleAdminLog() {
   else server.send(200, "application/octet-stream", "");
 }
 
+void handleAdminWifi() {
+  if (!adminOk()) return;
+  if (server.method() == HTTP_POST) {
+    int r = ssidSetConfig(server.arg("plain"));
+    if (r < 0) {
+      server.send(400, "text/plain", "no name");
+      return;
+    }
+    if (r > 0) apRestartAt = millis() + 1500;
+  }
+  server.send(200, "text/plain; charset=utf-8", ssidConfigText());
+}
+
 void handleAdminReset() {
   if (!adminOk()) return;
   if (server.method() != HTTP_POST) {
@@ -322,6 +345,7 @@ void setup() {
   EEPROM.begin(sizeof(Stats));
   loadStats();
   logBegin();
+  ssidBegin();
 
   Wire.begin();
   syncLcd();
@@ -330,9 +354,12 @@ void setup() {
     printLine(1, "demarrage...");
   }
 
+  // The SDK otherwise rewrites its config sector on every softAP() call,
+  // which the name rotation would turn into steady flash wear.
+  WiFi.persistent(false);
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(AP_IP, AP_IP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP(CFG_SSID, nullptr, 1, false, CFG_MAX_CLIENTS);
+  startAp();
 
   onConnect = WiFi.onSoftAPModeStationConnected(
     [](const WiFiEventSoftAPModeStationConnected &e) {
@@ -358,6 +385,7 @@ void setup() {
   server.on("/admin", handleAdmin);
   server.on("/admin/log.bin", handleAdminLog);
   server.on("/admin/reset", handleAdminReset);
+  server.on("/admin/wifi", handleAdminWifi);
   // Common captive-portal detection URLs across platforms.
   server.on("/generate_204", handleCaptive);
   server.on("/gen_204", handleCaptive);
@@ -369,8 +397,6 @@ void setup() {
   screen = 0;
   drawResting(screen);
   screenAt = lcdCheckAt = millis();
-
-  Serial.printf("AP \"%s\" up at %s\n", CFG_SSID, AP_IP.toString().c_str());
 }
 
 void loop() {
@@ -387,6 +413,13 @@ void loop() {
   }
 
   logFlush();
+
+  if (apRestartAt && (int32_t)(now - apRestartAt) >= 0) {
+    apRestartAt = 0;
+    startAp();
+  } else if (ssidTick(WiFi.softAPgetStationNum())) {
+    startAp();
+  }
 
   // Persist the counts a few seconds after the last change (limits flash wear).
   if (statsDirty && now - statsChangedAt >= SAVE_AFTER_MS) {

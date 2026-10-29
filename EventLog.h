@@ -11,6 +11,7 @@ enum EventType : uint8_t {
   EV_VIEW,        // arg: device code (os << 4 | browser), data: phone clock (epoch s)
   EV_CLICK,       // arg: link code
   EV_LEAVE,       // data: seconds spent on the page
+  EV_SSID,        // data: ssidHash() of the hotspot name now in use
 };
 
 struct __attribute__((packed)) LogRecord {

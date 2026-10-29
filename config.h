@@ -1,7 +1,9 @@
 #pragma once
 
-// Must stay self-declared as a demo: never the name of a real network.
-#define CFG_SSID "Ce_WiFi_est_un_piege"
+// Default hotspot names, used until a list is saved from the admin page.
+// They must stay self-declared as a demo: never the name of a real network.
+#define CFG_SSIDS "Ce_WiFi_est_un_piege", "Clique_si_t_es_curieux", \
+                  "Pas_un_virus_promis", "Alternance_cherchee_ici"
 #define CFG_MAX_CLIENTS 8
 
 // 1 = print every HTTP request (host, path, user agent) on the USB serial, to

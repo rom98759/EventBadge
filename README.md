@@ -27,8 +27,13 @@ shifter first.
 
 ## How it works
 
-- `WIFI_AP` hotspot `Ce_WiFi_est_un_piege` (open), IP 4.3.2.1 (not a private address:
-  some Android builds skip portal detection when the probe resolves to one).
+- Open `WIFI_AP` hotspot, IP 4.3.2.1 (not a private address: some Android
+  builds skip portal detection when the probe resolves to one).
+- **Hotspot name:** a list of up to 16 names (`WifiNames.cpp`), edited on the
+  admin page and saved to `/wifi.txt`. Modes: fixed (first name), in turn or
+  random every N minutes, optionally only while nobody is connected (a change
+  restarts the AP and drops everyone). Defaults come from `CFG_SSIDS`.
+  `WiFi.persistent(false)` keeps the SDK from rewriting flash on each change.
 - A catch-all DNS server + replies to the OS captive-portal probes make the
   page pop up on its own when a phone joins.
 - The web server serves one self-contained page (`PORTAL_HTML`) for every
@@ -78,6 +83,7 @@ current boot).
 | page opened | `/hi` beacon on load | phone time, OS + browser family |
 | link copied | `/click` beacon | which link (portfolio / GitHub / LinkedIn) |
 | left the page | `/bye` beacon (pagehide / hidden) | seconds on the page |
+| hotspot name | each AP (re)start | FNV-1a hash of the name (the admin maps it back) |
 
 - Each event is a 16-byte record appended to `/events.bin` on LittleFS
   (`EventLog.cpp`), batched every 3 s, capped at 1 MB (~65k events). The
@@ -86,8 +92,8 @@ current boot).
 - **Read it:** join the Wi-Fi, open `http://4.3.2.1/admin`, enter the key from
   `secrets.h`. The page downloads the raw log and computes everything in the
   browser: per-day connections, unique and returning visitors, pages opened,
-  links copied per link, devices, time on page, time connected, connections
-  per hour, the last 200 events, a CSV export and a reset button (log + totals).
+  links copied per link, connections per hotspot name, devices, time on page,
+  time connected, connections per hour, the last 200 events, a CSV export and a reset button (log + totals).
   "m'exclure" hides your own phone.
 - On Android, if the page will not load, turn mobile data off: with a Wi-Fi
   that has no internet, Chrome may send requests over 4G instead.
@@ -117,7 +123,7 @@ own (on Android a "Sign in to network" notification may need a tap).
 Flash layout: the default `4MB (FS:2MB OTA:~1019KB)`; uploads use
 "Only Sketch", which keeps the EEPROM totals and the log.
 
-`config.h` holds the SSID and the strings shown on the **LCD** (name, role,
+`config.h` holds the default hotspot names and the strings shown on the **LCD** (name, role,
 school, alternance timing). The portal's own text lives in `web/index.html`.
 
 ## Troubleshooting
