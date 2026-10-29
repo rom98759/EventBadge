@@ -6,3 +6,4 @@ build/
 secrets.h
 .env*
 docs/superpowers/
+DESIGN.md

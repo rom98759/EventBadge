@@ -135,7 +135,6 @@ portal.h            generated from web/index.html
 config.h            default hotspot names, LCD strings
 secrets.example.h   template for the gitignored secrets.h
 web/                portal source, images, build script
-DESIGN.md           design decisions, chosen and rejected directions
 ```
 
 ## Toolchain
@@ -161,3 +160,8 @@ arduino-cli lib install hd44780
 - Portal does not open on its own: the page is always at `http://4.3.2.1`.
 - `/admin` will not load on Android: turn mobile data off, or Chrome may send
   the request over 4G.
+
+## License
+
+Code under the [MIT License](LICENSE). The photos and the avatar in
+`web/assets/` are not covered: all rights reserved.
