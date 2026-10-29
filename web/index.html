@@ -103,7 +103,8 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
 .hint{font-size:11px;color:#303030;margin:0 0 7px}
 .links{display:grid;gap:8px}
 .links .b95{display:flex;align-items:center;gap:9px;padding:9px 12px;width:100%;text-align:left}
-.links .b95 svg{width:20px;height:20px;flex:none}
+.links .b95 svg,.vcf svg{width:20px;height:20px;flex:none}
+.vcf{display:flex;align-items:center;gap:9px;padding:9px 12px;color:inherit;text-decoration:none;font-weight:700}
 .links .b95 .lbl{font-weight:700;flex:none}
 .links .b95 .u{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--navy);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
 .site{text-align:center;font:700 19px var(--mono);color:var(--navy);background:#fff;border:2px solid;border-color:var(--sh) var(--lt) var(--lt) var(--sh);padding:11px 8px;margin:0 0 12px;user-select:all;word-break:break-all;cursor:pointer}
@@ -231,6 +232,8 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
           <button type="button" class="b95" data-copy="https://caillier-romain.fr/"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#007a7a"/><g fill="none" stroke="#fff" stroke-width="1"><circle cx="10" cy="10" r="8"/><ellipse cx="10" cy="10" rx="3.3" ry="8"/><line x1="2" y1="10" x2="18" y2="10"/><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></g></svg><span class="lbl">Portfolio</span><span class="u">caillier-romain.fr</span></button>
           <button type="button" class="b95" data-copy="https://www.linkedin.com/in/romain-caillier"><svg viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="20" rx="2" fill="#0a66c2"/><circle cx="5.5" cy="5.5" r="1.6" fill="#fff"/><rect x="4.1" y="8.3" width="2.8" height="7.6" fill="#fff"/><path d="M8.5 8.3h2.7v1.1c.4-.7 1.3-1.3 2.6-1.3 2.1 0 2.9 1.3 2.9 3.6v4.2h-2.8v-3.8c0-1-.4-1.6-1.3-1.6-.8 0-1.3.5-1.3 1.6v3.8H8.5z" fill="#fff"/></svg><span class="lbl">LinkedIn</span><span class="u">in/romain-caillier</span></button>
         </div>
+        <p class="hint">Ou garde-moi dans tes contacts (fichier texte .vcf, 1 Ko) :</p>
+        <a class="b95 vcf" id="vcf" href="/contact.vcf" download="Romain-Caillier.vcf"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="1" y="3" width="18" height="14" fill="#fff" stroke="#000"/><circle cx="6.5" cy="8.5" r="2.2" fill="#000080"/><path d="M3 15c0-2.4 1.6-3.4 3.5-3.4s3.5 1 3.5 3.4" fill="#000080"/><rect x="11.5" y="7" width="5.5" height="1.4" fill="#000"/><rect x="11.5" y="10" width="5.5" height="1.4" fill="#000"/><rect x="11.5" y="13" width="3.5" height="1.4" fill="#000"/></svg><span class="lbl">Télécharger mon contact</span></a>
       </fieldset>
 
       <div class="prog">
@@ -409,6 +412,7 @@ function fireBeacon(path){try{if(navigator.sendBeacon)navigator.sendBeacon(path)
   addEventListener("pagehide",bye);
   document.addEventListener("visibilitychange",function(){if(document.hidden)bye();});
 })();
+document.getElementById("vcf").addEventListener("click",function(){fireBeacon("/click?l=4");});
 function linkCode(u){return /caillier-romain/.test(u)?1:/github/.test(u)?2:/linkedin/.test(u)?3:0;}
 function copyText(t){
   if(navigator.clipboard&&navigator.clipboard.writeText)

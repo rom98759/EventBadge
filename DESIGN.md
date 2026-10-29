@@ -101,3 +101,17 @@
   C "Clippy parle" (2×2 Clippy face typing in a speech bubble), and any
   "sac jaune" text on the LCD ("c'est nul").
 - Mock-ups: artifact "EventBadge LCD directions".
+
+## Contact card (2026-10-29)
+
+- Links cannot leave the captive portal (Android's portal window keeps
+  http(s) links in its own Wi-Fi-bound WebView; iOS stopped opening Safari
+  years ago) and the badge has no internet. Visitors who only copy a link
+  tend to forget it.
+- **Added**, next to (not instead of) the copy buttons: an explicit
+  "Télécharger mon contact" button, labelled as a 1 KB .vcf text file so it
+  does not look like a suspicious download on a "trap" network. This revisits
+  the earlier "no add contact button" choice at the user's request.
+- **Rejected:** a .txt file (ends up unread in Downloads), validating the
+  network to redirect into the real browser (Android just closes the portal,
+  and the phone loses its 4G while connected).

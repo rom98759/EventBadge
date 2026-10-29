@@ -58,7 +58,9 @@ shifter first.
   highlights one short memorable address (`caillier-romain.fr`, which links to
   everything) and the links are **tap-to-copy** buttons (clipboard, with an
   execCommand fallback since the portal is http, not a secure context): copy,
-  leave the Wi-Fi, paste in a real browser.
+  leave the Wi-Fi, paste in a real browser. A "Télécharger mon contact"
+  button serves `/contact.vcf` (vCard 3.0 with the same links) so visitors
+  can keep the links on their phone.
 - **Generate the firmware copy:** `python3 web/build.py` → rewrites
   `portal.h`, embedding every `assets/*.png` (the avatar) as data URIs.
   Always edit `index.html` and regenerate; never hand-edit `portal.h`.

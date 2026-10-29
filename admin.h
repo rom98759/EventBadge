@@ -80,7 +80,7 @@ td,th{border:1px solid #808080;padding:4px 6px;text-align:left;font-size:14px;ve
 var K="",info=null,evs=[],wifi={names:[]};
 var TYPES={1:"démarrage",2:"connexion",3:"déconnexion",4:"page ouverte",5:"clic",6:"quitte la page",7:"nom du Wi-Fi"};
 var OS=["?","iOS","Android","Windows","macOS","Linux"],BR=["?","Safari","Chrome","Firefox","Edge","Samsung","Opera"];
-var LINKS=["autre","portfolio","GitHub","LinkedIn"];
+var LINKS=["autre","portfolio","GitHub","LinkedIn","contact .vcf"];
 function $(i){return document.getElementById(i);}
 function dev(a){return (OS[a>>4]||"?")+" / "+(BR[a&15]||"?");}
 function vid(v){return v?"#"+("0000"+(v>>>0).toString(16)).slice(-5):"?";}

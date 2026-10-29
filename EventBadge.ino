@@ -307,6 +307,25 @@ uint32_t argU32(const char *name) {
   return strtoul(server.arg(name).c_str(), nullptr, 10);
 }
 
+// Same identity and links as the portal page, as a contact card visitors can
+// keep: the links cannot open from the portal, a contact stays on the phone.
+const char CONTACT_VCF[] PROGMEM =
+  "BEGIN:VCARD\r\n"
+  "VERSION:3.0\r\n"
+  "N:Caillier;Romain;;;\r\n"
+  "FN:Romain Caillier\r\n"
+  "TITLE:Dév & Sécurité · École 42 Angoulême\r\n"
+  "NOTE:Cherche une alternance en développement\\, sécurité ou DevSecOps dès juin 2027.\r\n"
+  "URL:https://caillier-romain.fr/\r\n"
+  "URL:https://github.com/rom98759/\r\n"
+  "URL:https://www.linkedin.com/in/romain-caillier\r\n"
+  "END:VCARD\r\n";
+
+void handleContact() {
+  server.sendHeader("Content-Disposition", "attachment; filename=\"Romain-Caillier.vcf\"");
+  server.send_P(200, "text/vcard; charset=utf-8", CONTACT_VCF);
+}
+
 void handleRoot() {
   logRequest("portal");
   server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
@@ -462,6 +481,7 @@ void setup() {
   server.on("/click", handleClick);
   server.on("/hi", handleHi);
   server.on("/bye", handleBye);
+  server.on("/contact.vcf", handleContact);
   server.on("/admin", handleAdmin);
   server.on("/admin/log.bin", handleAdminLog);
   server.on("/admin/reset", handleAdminReset);
