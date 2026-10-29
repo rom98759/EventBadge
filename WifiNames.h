@@ -14,4 +14,6 @@ bool ssidTick(uint8_t stations);
 String ssidConfigText();
 // -1 = rejected, 0 = saved with the same current name, 1 = saved and the name changed.
 int ssidSetConfig(const String &text);
+// -1 = not in the list, 0 = already in use, 1 = switched.
+int ssidUse(const String &name);
 uint32_t ssidHash(const char *name);

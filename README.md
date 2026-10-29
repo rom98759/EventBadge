@@ -34,6 +34,8 @@ shifter first.
   random every N minutes, optionally only while nobody is connected (a change
   restarts the AP and drops everyone). Defaults come from `CFG_SSIDS`.
   `WiFi.persistent(false)` keeps the SDK from rewriting flash on each change.
+  Tapping a name on the admin page switches to it at once (`/admin/wifi/use`);
+  the rotation timer restarts from there.
 - A catch-all DNS server + replies to the OS captive-portal probes make the
   page pop up on its own when a phone joins.
 - The web server serves one self-contained page (`PORTAL_HTML`) for every

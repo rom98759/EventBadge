@@ -378,6 +378,21 @@ void handleAdminWifi() {
   server.send(200, "text/plain; charset=utf-8", ssidConfigText());
 }
 
+void handleAdminWifiUse() {
+  if (!adminOk()) return;
+  if (server.method() != HTTP_POST) {
+    server.send(405, "text/plain", "POST only");
+    return;
+  }
+  int r = ssidUse(server.arg("plain"));
+  if (r < 0) {
+    server.send(404, "text/plain", "unknown name");
+    return;
+  }
+  if (r > 0) apRestartAt = millis() + 1500;
+  server.send(200, "text/plain; charset=utf-8", ssidConfigText());
+}
+
 void handleAdminReset() {
   if (!adminOk()) return;
   if (server.method() != HTTP_POST) {
@@ -451,6 +466,7 @@ void setup() {
   server.on("/admin/log.bin", handleAdminLog);
   server.on("/admin/reset", handleAdminReset);
   server.on("/admin/wifi", handleAdminWifi);
+  server.on("/admin/wifi/use", handleAdminWifiUse);
   // Common captive-portal detection URLs across platforms.
   server.on("/generate_204", handleCaptive);
   server.on("/gen_204", handleCaptive);

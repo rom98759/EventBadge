@@ -130,6 +130,18 @@ int ssidSetConfig(const String &text) {
   return before != names[current];
 }
 
+// The rotation timer restarts from a manual pick, so it is not overridden at once.
+int ssidUse(const String &name) {
+  for (uint8_t i = 0; i < count; i++) {
+    if (name != names[i]) continue;
+    bool changed = i != current;
+    current = i;
+    changedAt = millis();
+    return changed;
+  }
+  return -1;
+}
+
 // Plain FNV-1a; the admin page computes the same hash to put names back on the
 // logged SSID changes.
 uint32_t ssidHash(const char *name) {
