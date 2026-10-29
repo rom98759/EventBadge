@@ -29,6 +29,10 @@ extern "C" {
 // so this public-looking address is never routed anywhere.
 const IPAddress AP_IP(4, 3, 2, 1);
 const uint32_t SCREEN_MS = 4500;   // time on each resting screen
+const uint8_t SCREENS = 5;
+const uint32_t SCROLL_MS = 500;     // per character when the hotspot name scrolls
+const uint32_t SCROLL_HOLD_MS = 2000;  // pause at each end of the scroll
+const uint8_t TEXT_W = 14;          // columns 0 and 15 are kept for glyphs
 const uint32_t ALERT_MS = 3000;    // time the "new connection" alert stays up
 const uint32_t FLASH_MS = 160;     // backlight blink half-period during an alert
 const uint32_t LCD_CHECK_MS = 2000; // how often to look for the screen / check it is still there
@@ -39,13 +43,15 @@ ESP8266WebServer server(80);
 WiFiEventHandler onConnect;
 WiFiEventHandler onDisconnect;
 
-enum Glyph : uint8_t { SKULL, WIFI, DOT, CHIP };
+enum Glyph : uint8_t { SKULL, WIFI, CHIP, RIGHT, LEFT, LINK };
 
 uint8_t glyphs[][8] = {
   {0b01110, 0b11111, 0b10101, 0b11111, 0b10101, 0b01110, 0b01010, 0b00000},  // skull
   {0b00000, 0b10000, 0b10100, 0b10101, 0b10101, 0b10101, 0b00000, 0b00000},  // wifi bars
-  {0b00000, 0b00000, 0b00110, 0b01111, 0b01111, 0b00110, 0b00000, 0b00000},  // middle dot
   {0b00000, 0b01110, 0b10001, 0b10101, 0b10001, 0b01110, 0b00000, 0b00000},  // chip
+  {0b00000, 0b01000, 0b01100, 0b01110, 0b01100, 0b01000, 0b00000, 0b00000},  // arrow right
+  {0b00000, 0b00010, 0b00110, 0b01110, 0b00110, 0b00010, 0b00000, 0b00000},  // arrow left
+  {0b00000, 0b00110, 0b01001, 0b10110, 0b01101, 0b10010, 0b01100, 0b00000},  // chain link
 };
 
 // Anonymous counts, kept across reboots in EEPROM. `connections` is set from
@@ -114,6 +120,12 @@ void syncLcd() {
   Serial.println(F("LCD: ready"));
 }
 
+// setCursor/write lets a custom glyph sit inside a text line.
+void putGlyph(uint8_t col, uint8_t row, uint8_t g) {
+  lcd.setCursor(col, row);
+  lcd.write(g);
+}
+
 void printLine(uint8_t row, const char *text) {
   char buf[17];
   snprintf(buf, sizeof(buf), "%-16s", text);
@@ -121,24 +133,27 @@ void printLine(uint8_t row, const char *text) {
   lcd.print(buf);
 }
 
-// Center text on a 16-char row, blanking the rest.
-void printCentered(uint8_t row, const char *text) {
+// Center text in `width` columns starting at `from`, blanking the rest of
+// that span only, so glyphs on either side are left alone.
+void printCentered(uint8_t row, const char *text, uint8_t from = 0, uint8_t width = 16) {
   char buf[17];
   int len = strlen(text);
-  if (len > 16) len = 16;
-  int pad = (16 - len) / 2;
-  memset(buf, ' ', 16);
+  if (len > width) len = width;
+  int pad = (width - len) / 2;
+  memset(buf, ' ', width);
   memcpy(buf + pad, text, len);
-  buf[16] = '\0';
-  lcd.setCursor(0, row);
+  buf[width] = '\0';
+  lcd.setCursor(from, row);
   lcd.print(buf);
 }
 
-// setCursor/write lets a custom glyph sit inside a text line.
-void putGlyph(uint8_t col, uint8_t row, uint8_t g) {
-  lcd.setCursor(col, row);
-  lcd.write(g);
+// Text between two glyphs: the layout rule that keeps glyphs off the letters.
+void printFramed(uint8_t row, const char *text, uint8_t left, uint8_t right) {
+  putGlyph(0, row, left);
+  printCentered(row, text, 1, TEXT_W);
+  putGlyph(15, row, right);
 }
+
 
 uint16_t readConnections() {
   noInterrupts();
@@ -167,32 +182,83 @@ void markDirty() {
   statsChangedAt = millis();
 }
 
+// Offset of a text longer than the window: scrolls forward, pauses, scrolls
+// back, pauses, so the whole hotspot name can be read.
+uint8_t scrollOffset(uint8_t len, uint8_t width, uint32_t t) {
+  if (len <= width) return 0;
+  uint32_t span = len - width, run = span * SCROLL_MS;
+  t %= 2 * (SCROLL_HOLD_MS + run);
+  if (t < SCROLL_HOLD_MS) return 0;
+  t -= SCROLL_HOLD_MS;
+  if (t < run) return t / SCROLL_MS;
+  t -= run;
+  if (t < SCROLL_HOLD_MS) return span;
+  t -= SCROLL_HOLD_MS;
+  return span - min<uint32_t>(span, t / SCROLL_MS);
+}
+
+// The hotspot screen stays up for one full back-and-forth of a long name.
+uint32_t screenMs(uint8_t which) {
+  uint8_t len = strlen(ssidCurrent());
+  if (which != 0 || len <= TEXT_W) return SCREEN_MS;
+  return 2 * (SCROLL_HOLD_MS + (len - TEXT_W) * SCROLL_MS) + 600;
+}
+
+uint8_t ssidShown = 255;  // offset on screen, 255 = redraw
+
+void drawSsid(uint32_t t) {
+  if (!lcdReady) return;
+  const char *name = ssidCurrent();
+  uint8_t len = strlen(name), off = scrollOffset(len, TEXT_W, t);
+  if (off == ssidShown) return;
+  ssidShown = off;
+  if (len <= TEXT_W) {
+    printCentered(1, name, 1, TEXT_W);
+    return;
+  }
+  char buf[TEXT_W + 1];
+  for (uint8_t i = 0; i < TEXT_W; i++) {
+    char c = name[off + i];
+    buf[i] = (c >= 32 && c <= 126) ? c : '?';  // the LCD ROM has no UTF-8
+  }
+  buf[TEXT_W] = '\0';
+  lcd.setCursor(1, 1);
+  lcd.print(buf);
+}
+
 void drawResting(uint8_t which) {
   if (!lcdReady) return;
   lcd.clear();
-  char buf[17];
+  char buf[TEXT_W + 1];
   switch (which) {
     case 0:
-      printCentered(0, "PIEGE A CURIEUX");
-      putGlyph(1, 0, SKULL);
-      putGlyph(14, 0, SKULL);
-      snprintf(buf, sizeof(buf), "curieux: %u", readConnections());
-      printCentered(1, buf);
+      printFramed(0, "CONNECTE-TOI", WIFI, WIFI);
+      putGlyph(0, 1, RIGHT);
+      putGlyph(15, 1, LEFT);
+      ssidShown = 255;
+      drawSsid(0);
       break;
     case 1:
       printCentered(0, CFG_NAME);
-      printCentered(1, CFG_ROLE);
-      putGlyph(0, 1, CHIP);
-      putGlyph(15, 1, CHIP);
+      printFramed(1, CFG_ROLE, CHIP, CHIP);
       break;
     case 2:
-      lcd.setCursor(0, 0);
-      lcd.print(">_ etudiant 42");
+      printCentered(0, "Etudiant 42");
       printCentered(1, "stage pentest");
       break;
     case 3:
-      printCentered(0, ">> ALTERNANCE <<");
-      printCentered(1, "des juin 2027");
+      printFramed(0, "ALTERNANCE", RIGHT, LEFT);
+      printCentered(1, CFG_WHEN);
+      break;
+    case 4:
+      snprintf(buf, sizeof(buf), "%-10s%03u", "Curieux", readConnections());
+      putGlyph(0, 0, SKULL);
+      lcd.setCursor(1, 0);
+      lcd.print(buf);
+      snprintf(buf, sizeof(buf), "%-10s%03u", "Liens", clicks);
+      putGlyph(0, 1, LINK);
+      lcd.setCursor(1, 1);
+      lcd.print(buf);
       break;
   }
 }
@@ -200,9 +266,7 @@ void drawResting(uint8_t which) {
 void drawAlert() {
   if (!lcdReady) return;
   lcd.clear();
-  printCentered(0, "+1 CURIEUX !");
-  putGlyph(1, 0, WIFI);
-  putGlyph(14, 0, WIFI);
+  printFramed(0, "+1 CURIEUX !", WIFI, WIFI);
   printCentered(1, "bienvenue a toi");
 }
 
@@ -221,6 +285,7 @@ void startAp() {
   WiFi.softAP(ssidCurrent(), nullptr, 1, false, CFG_MAX_CLIENTS);
   logEvent(EV_SSID, 0, ssidHash(ssidCurrent()), 0);
   Serial.printf("AP \"%s\" up at %s\n", ssidCurrent(), AP_IP.toString().c_str());
+  if (screen == 0 && !alertUntil) drawResting(0);
 }
 
 uint32_t apRestartAt = 0;  // deferred so the admin's reply gets out before the AP drops
@@ -452,8 +517,9 @@ void loop() {
     return;  // hold the alert; resting rotation resumes after it
   }
 
-  if (now - screenAt >= SCREEN_MS) {
-    screen = (screen + 1) % 4;
+  if (screen == 0) drawSsid(now - screenAt);
+  if (now - screenAt >= screenMs(screen)) {
+    screen = (screen + 1) % SCREENS;
     screenAt = now;
     drawResting(screen);
   }

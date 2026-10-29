@@ -47,11 +47,14 @@
 - The SSID openly says it is a trap/demo; never mimic a real network
   (venue, operator, brand).
 - No credential, form or login page of any kind.
-- Device details are computed by JavaScript in the visitor's browser and
-  shown only to them: nothing is sent to, logged or stored on the ESP.
-- The LCD shows only an anonymous count of connections, never MAC
-  addresses, device names or other identifiers.
-- The page states plainly that nothing is collected and how to disconnect.
+- The browser diagnostic box is computed in the visitor's browser and shown
+  only to them. Since 2026-10-29 the badge does keep visit stats (time,
+  OS/browser family, link copied, time on page, a salted MAC hash): the page
+  must therefore never claim that nothing is collected. The "rien n'est
+  conservé" / "rien n'est envoyé" sentences were removed, not replaced
+  (user's choice).
+- The LCD shows only counts and the hotspot name, never MAC addresses,
+  device names or other identifiers.
 
 ## Enclosure (2026-10-25)
 
@@ -83,3 +86,18 @@
   bubble (loved, too big at 126×93), web-page mock-ups instead of CAD views,
   a full back plate with a strap tunnel (too bulky), double-sided tape.
 - **CAD source:** `~/Documents/FreeCAD/EventBadge/` (`build_fenetre_clippy.py`).
+
+## LCD v2 (2026-10-29)
+
+- **Chosen:** A "Fenêtre propre". Same night-blue LCD, five screens in
+  rotation: "CONNECTE-TOI" + the current hotspot name scrolling back and
+  forth (pause at each end), name/role, "Etudiant 42 / stage pentest",
+  ALTERNANCE / des juin 2027, stats (curieux + liens copiés, zero-padded,
+  right column). "+1 CURIEUX !" alert with backlight flash kept.
+- **Rule:** columns 0 and 15 hold glyphs only; text lives in the 14 middle
+  columns, centered. Fixes glyphs overwriting letters ("P☠EGE A CURIEU☠")
+  and the one left-aligned screen.
+- **Rejected:** B "Téléscripteur" (fixed top row + continuous ticker),
+  C "Clippy parle" (2×2 Clippy face typing in a speech bubble), and any
+  "sac jaune" text on the LCD ("c'est nul").
+- Mock-ups: artifact "EventBadge LCD directions".
