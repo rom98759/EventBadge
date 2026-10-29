@@ -3,6 +3,10 @@
 #include "config.h"
 
 static const char CFG_PATH[] = "/wifi.txt";
+// Every name ever used, so the admin page can still label old log entries
+// (the log stores hashes) after the list has been edited. "\nname\n" format.
+static const char SEEN_PATH[] = "/ssid-seen.txt";
+static const size_t SEEN_MAX_BYTES = 4096;
 static const char *const DEFAULT_NAMES[] = { CFG_SSIDS };
 
 static char names[SSID_MAX_NAMES][33];  // 32 bytes is the 802.11 SSID limit
@@ -19,6 +23,7 @@ struct Parsed {
   SsidMode mode = SSID_FIXED;
   uint16_t everyMin = 15;
   bool waitEmpty = true;
+  uint32_t defaults = 0;  // defaultsHash() when the list was saved
 };
 
 // "key=value" lines: mode=fixed|seq|random, every=<minutes>, wait=0|1 and one
@@ -38,6 +43,7 @@ static bool parse(const String &text, Parsed &p) {
     if (key == "mode") p.mode = val == "seq" ? SSID_SEQ : val == "random" ? SSID_RANDOM : SSID_FIXED;
     else if (key == "every") p.everyMin = constrain(val.toInt(), 1, 1440);
     else if (key == "wait") p.waitEmpty = val != "0";
+    else if (key == "defaults") p.defaults = strtoul(val.c_str(), nullptr, 10);
     else if (key == "ssid" && val.length() && p.count < SSID_MAX_NAMES) {
       strncpy(p.names[p.count], val.c_str(), 32);
       p.names[p.count][32] = '\0';
@@ -47,12 +53,60 @@ static bool parse(const String &text, Parsed &p) {
   return p.count > 0;
 }
 
+// Identifies the CFG_SSIDS list, so editing config.h and flashing wins over a
+// list saved from the admin page with older defaults.
+static uint32_t defaultsHash() {
+  uint32_t h = 2166136261u;
+  for (const char *n : DEFAULT_NAMES) h = (ssidHash(n) ^ h) * 16777619u;
+  return h;
+}
+
+static void useDefaults(Parsed &p) {
+  p.count = 0;
+  for (const char *n : DEFAULT_NAMES) {
+    if (p.count == SSID_MAX_NAMES) break;
+    strncpy(p.names[p.count], n, 32);
+    p.names[p.count++][32] = '\0';
+  }
+}
+
+static void save() {
+  File f = LittleFS.open(CFG_PATH, "w");
+  if (f) {
+    String saved = ssidConfigText();
+    f.print(saved);
+  }
+  f.close();
+}
+
 static void apply(const Parsed &p) {
   memcpy(names, p.names, sizeof(names));
   count = p.count;
   mode = p.mode;
   everyMin = p.everyMin;
   waitEmpty = p.waitEmpty;
+}
+
+static void rememberNames() {
+  File f = LittleFS.open(SEEN_PATH, "r");
+  String seen = f ? f.readString() : String("\n");
+  f.close();
+  String added = "\n";
+  auto add = [&](const char *n) {
+    String key = String('\n') + n + '\n';
+    if (seen.indexOf(key) < 0 && added.indexOf(key) < 0) {
+      added += n;
+      added += '\n';
+    }
+  };
+  for (const char *n : DEFAULT_NAMES) add(n);
+  for (uint8_t i = 0; i < count; i++) add(names[i]);
+  added.remove(0, 1);
+  if (!added.length() || seen.length() + added.length() > SEEN_MAX_BYTES) return;
+  if (!LittleFS.exists(SEEN_PATH)) added = String('\n') + added;
+  f = LittleFS.open(SEEN_PATH, "a");
+  if (f) f.print(added);
+  f.close();
 }
 
 static uint8_t pick() {
@@ -66,15 +120,12 @@ void ssidBegin() {
   File f = LittleFS.open(CFG_PATH, "r");
   bool ok = f && parse(f.readString(), p);
   f.close();
-  if (!ok) {
-    p = Parsed();
-    for (const char *n : DEFAULT_NAMES) {
-      if (p.count == SSID_MAX_NAMES) break;
-      strncpy(p.names[p.count], n, 32);
-      p.names[p.count++][32] = '\0';
-    }
-  }
+  if (!ok) p = Parsed();
+  bool stale = !ok || p.defaults != defaultsHash();
+  if (stale) useDefaults(p);  // keeps mode, interval and wait setting
   apply(p);
+  if (ok && stale) save();
+  rememberNames();
   randomSeed(RANDOM_REG32);
   current = mode == SSID_RANDOM ? random(count) : 0;
   changedAt = millis();
@@ -99,12 +150,25 @@ String ssidConfigText() {
   s += everyMin;
   s += F("\nwait=");
   s += waitEmpty ? '1' : '0';
+  s += F("\ndefaults=");
+  s += defaultsHash();
   s += F("\ncurrent=");
   s += names[current];
   for (uint8_t i = 0; i < count; i++) {
     s += F("\nssid=");
     s += names[i];
   }
+  File f = LittleFS.open(SEEN_PATH, "r");
+  if (f) {
+    String seen = f.readString();
+    seen.trim();
+    seen.replace("\n", "\nseen=");
+    if (seen.length()) {
+      s += F("\nseen=");
+      s += seen;
+    }
+  }
+  f.close();
   return s;
 }
 
@@ -121,12 +185,8 @@ int ssidSetConfig(const String &text) {
       if (before == names[i]) current = i;
   changedAt = millis();
 
-  File f = LittleFS.open(CFG_PATH, "w");
-  if (f) {
-    String saved = ssidConfigText();
-    f.print(saved);
-  }
-  f.close();
+  rememberNames();
+  save();
   return before != names[current];
 }
 

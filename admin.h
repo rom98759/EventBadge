@@ -77,7 +77,7 @@ td,th{border:1px solid #808080;padding:4px 6px;text-align:left;font-size:14px;ve
 <div class="w"><div class="t">Journal (200 derniers)</div><div class="c scroll"><table id="log"></table></div></div>
 </div>
 <script>
-var K="",info=null,evs=[],wifi={names:[]};
+var K="",info=null,evs=[],wifi={names:[],seen:[]};
 var TYPES={1:"démarrage",2:"connexion",3:"déconnexion",4:"page ouverte",5:"clic",6:"quitte la page",7:"nom du Wi-Fi"};
 var OS=["?","iOS","Android","Windows","macOS","Linux"],BR=["?","Safari","Chrome","Firefox","Edge","Samsung","Opera"];
 var LINKS=["autre","portfolio","GitHub","LinkedIn","contact .vcf"];
@@ -92,10 +92,11 @@ function when(e){return e.t?hms(e.t):"boot "+e.boot+" +"+dur(e.ms/1000);}
 function detail(e){return e.type==4?dev(e.arg):e.type==5?(LINKS[e.arg]||"?"):e.type==6?dur(e.data):e.type==7?ssidName(e.data):"";}
 // Same FNV-1a as ssidHash() on the badge: the log stores hashes, not names.
 function fnv(s){var b=new TextEncoder().encode(s),h=2166136261;for(var i=0;i<b.length;i++)h=Math.imul(h^b[i],16777619)>>>0;return h;}
-function ssidName(h){var n=wifi.names.concat(wifi.current||[]);for(var i=0;i<n.length;i++)if(fnv(n[i])===h)return n[i];return "ancien nom";}
+function ssidName(h){var n=wifi.names.concat(wifi.current||[],wifi.seen);for(var i=0;i<n.length;i++)if(fnv(n[i])===h)return n[i];return "ancien nom";}
 function loadWifi(){return fetch("/admin/wifi",{headers:{"X-Key":K},cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(showWifi);}
-function showWifi(t){var c={names:[]};
-  t.split("\n").forEach(function(l){var i=l.indexOf("=");if(i<0)return;var k=l.slice(0,i),v=l.slice(i+1);if(k=="ssid")c.names.push(v);else c[k]=v;});
+function showWifi(t){var c={names:[],seen:[]};
+  t.split("\n").forEach(function(l){var i=l.indexOf("=");if(i<0)return;var k=l.slice(0,i),v=l.slice(i+1);
+    if(k=="ssid")c.names.push(v);else if(k=="seen")c.seen.push(v);else c[k]=v;});
   wifi=c;$("names").value=c.names.join("\n");
   var ul=$("namelist");ul.textContent="";
   c.names.forEach(function(n){var li=document.createElement("li"),b=document.createElement("button"),t=document.createElement("span"),m=document.createElement("small");

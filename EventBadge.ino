@@ -331,10 +331,11 @@ void handleRoot() {
   server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
 }
 
-// "connections,clicks" — the page shows these as the real counters.
+// "connections,clicks,hotspot name": real counters and the name in use. The
+// name goes last because it may itself contain commas.
 void handleCount() {
-  char buf[16];
-  snprintf(buf, sizeof(buf), "%u,%u", readConnections(), clicks);
+  char buf[52];
+  snprintf(buf, sizeof(buf), "%u,%u,%s", readConnections(), clicks, ssidCurrent());
   server.send(200, "text/plain", buf);
 }
 

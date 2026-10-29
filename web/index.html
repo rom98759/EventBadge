@@ -173,7 +173,7 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
     <div class="tb">
       <span class="name">
         <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="11" fill="#fff" stroke="#000"/><rect x="1" y="2" width="14" height="3" fill="#000080"/><path d="M5 14h6M8 13v1" stroke="#000"/></svg>
-        <span>Ce_WiFi_est_un_piege.exe</span>
+        <span><span class="ssid">Ce_WiFi_est_un_piege</span>.exe</span>
       </span>
       <span class="btns"><b id="btnMin">_</b><b>□</b><b id="btnClose" title="Fermer">×</b></span>
     </div>
@@ -247,7 +247,7 @@ fieldset>legend{position:absolute;top:-8px;left:8px;background:var(--face);paddi
       </fieldset>
 
       <div class="status"><span id="st">Piège armé et opérationnel.</span><span class="r" id="cnt">Curieux : 023</span></div>
-      <p class="note">Pour partir : oubliez le réseau « Ce_WiFi_est_un_piege ». Il ne vous en voudra pas.</p>
+      <p class="note">Pour partir : oubliez le réseau « <span class="ssid">Ce_WiFi_est_un_piege</span> ». Il ne vous en voudra pas.</p>
 
     </div>
   </div></div>
@@ -464,8 +464,10 @@ document.getElementById("btnOk").addEventListener("click",function(e){
   var cnt=document.getElementById("cnt");
   function pad(n){return ("00"+n).slice(-3);}
   try{fetch("/count",{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){
-    var p=t.split(","),c=parseInt(p[0],10),k=parseInt(p[1],10);
+    var p=t.split(","),c=parseInt(p[0],10),k=parseInt(p[1],10),ssid=p.slice(2).join(",");
     if(cnt&&!isNaN(c))cnt.textContent="Curieux : "+pad(c)+(!isNaN(k)?" · liens "+k:"");
+    // The hotspot name changes from the admin page; the markup only holds a default.
+    if(ssid){document.title=ssid;[].forEach.call(document.querySelectorAll(".ssid"),function(el){el.textContent=ssid;});}
   }).catch(function(){});}catch(e){}
   // Copy-to-clipboard for any [data-copy] control (links can't open here).
   document.addEventListener("click",function(e){
