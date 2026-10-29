@@ -36,11 +36,9 @@ shifter first.
   system fonts, the avatar is an embedded data URI.
 - The LCD cycles four screens (trap + counter, name/role, student 42,
   alternance June 2027) and flashes `+1 CURIEUX` on each connection.
-- Two anonymous counters are kept (`connections`, `clicks`), persisted in
-  EEPROM-emulated flash (debounced writes) so they survive a reboot. The page
-  reads them from `/count` ("connections,clicks") and a link click fires a
-  beacon to `/click`. Only totals are stored: no MAC address, device name or
-  any identifier is ever read or kept.
+- Two totals (`connections`, `clicks`) are persisted in EEPROM-emulated flash
+  (debounced writes) and shown on the LCD and the page (`/count`).
+- Every visit is also written to an event log; see *Stats and event log*.
 
 ## The portal page
 
@@ -63,12 +61,40 @@ shifter first.
   BSOD, **Démarrer** opens a start menu.
 - **Diagnostic:** the "Au passage, détecté sur vous" box is computed in the
   visitor's own browser (OS/browser, screen, language, timezone, battery) and
-  shown only to them; nothing is sent to or stored on the badge. If a value is
-  unavailable, a punchline is shown instead of a fake one.
+  shown only to them; only the OS/browser family is sent to the badge (for the
+  stats). If a value is unavailable, a punchline is shown instead of a fake one.
+
+## Stats and event log
+
+The badge has no clock and no internet, so it logs `millis()` + a boot number,
+and the page sends the visitor's phone clock on load; the admin page dates
+every event from the median of those clocks (and from its own clock for the
+current boot).
+
+| Event | Source | Extra data |
+|---|---|---|
+| boot | `setup()` | |
+| connect / disconnect | Wi-Fi AP callbacks | association id |
+| page opened | `/hi` beacon on load | phone time, OS + browser family |
+| link copied | `/click` beacon | which link (portfolio / GitHub / LinkedIn) |
+| left the page | `/bye` beacon (pagehide / hidden) | seconds on the page |
+
+- Each event is a 16-byte record appended to `/events.bin` on LittleFS
+  (`EventLog.cpp`), batched every 3 s, capped at 1 MB (~65k events). The
+  visitor id is an FNV-1a hash of the MAC salted with the chip id; HTTP
+  requests are mapped to it through the AP's station list (IP → MAC).
+- **Read it:** join the Wi-Fi, open `http://4.3.2.1/admin`, enter the key from
+  `secrets.h`. The page downloads the raw log and computes everything in the
+  browser: per-day connections, unique and returning visitors, pages opened,
+  links copied per link, devices, time on page, time connected, connections
+  per hour, the last 200 events, a CSV export and a reset button (log + totals).
+  "m'exclure" hides your own phone.
+- On Android, if the page will not load, turn mobile data off: with a Wi-Fi
+  that has no internet, Chrome may send requests over 4G instead.
 
 ## Libraries and core
 
-- ESP8266 core 3.1.2 (board manager URL
+- ESP8266 core 3.1.2, with its bundled LittleFS (board manager URL
   `https://arduino.esp8266.com/stable/package_esp8266com_index.json`)
 - hd44780 (Bill Perry) 1.3.2
 
@@ -78,14 +104,18 @@ shifter first.
 arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
 arduino-cli core update-index && arduino-cli core install esp8266:esp8266
 arduino-cli lib install hd44780
-python3 web/build.py          # regenerate portal.h from web/index.html
-arduino-cli compile && arduino-cli upload
+cp secrets.example.h secrets.h   # then set ADMIN_KEY (gitignored)
+python3 web/build.py             # regenerate portal.h from web/index.html
+arduino-cli compile --upload     # plain `upload` sends the last build, not the current code
 ```
 
 Then join the Wi-Fi `Ce_WiFi_est_un_piege` on a phone; the portal opens on its
 own (on Android a "Sign in to network" notification may need a tap).
 
 ## Config
+
+Flash layout: the default `4MB (FS:2MB OTA:~1019KB)`; uploads use
+"Only Sketch", which keeps the EEPROM totals and the log.
 
 `config.h` holds the SSID and the strings shown on the **LCD** (name, role,
 school, alternance timing). The portal's own text lives in `web/index.html`.

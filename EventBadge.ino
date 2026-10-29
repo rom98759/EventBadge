@@ -2,12 +2,25 @@
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <EEPROM.h>
+#include <LittleFS.h>
 #include <Wire.h>
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_I2Cexp.h>
 
 #include "config.h"
 #include "portal.h"
+#include "admin.h"
+#include "EventLog.h"
+
+#if __has_include("secrets.h")
+#include "secrets.h"
+#else
+#error "Copy secrets.example.h to secrets.h and set ADMIN_KEY"
+#endif
+
+extern "C" {
+#include <user_interface.h>
+}
 
 // Deliberately not a private address: some Android builds (seen on a Samsung
 // S23, Android 16) treat a probe hostname resolving to a private IP as "no
@@ -23,6 +36,7 @@ hd44780_I2Cexp lcd;
 DNSServer dns;
 ESP8266WebServer server(80);
 WiFiEventHandler onConnect;
+WiFiEventHandler onDisconnect;
 
 enum Glyph : uint8_t { SKULL, WIFI, DOT, CHIP };
 
@@ -200,6 +214,24 @@ void logRequest(const char *reply) {
 #endif
 }
 
+// HTTP handlers only see an IP; the AP's station list maps it back to the MAC.
+uint32_t clientVisitor() {
+  IPAddress ip = server.client().remoteIP();
+  uint32_t v = 0;
+  for (station_info *s = wifi_softap_get_station_info(); s; s = STAILQ_NEXT(s, next)) {
+    if (IPAddress(s->ip.addr) == ip) {
+      v = visitorId(s->bssid);
+      break;
+    }
+  }
+  wifi_softap_free_station_info();
+  return v;
+}
+
+uint32_t argU32(const char *name) {
+  return strtoul(server.arg(name).c_str(), nullptr, 10);
+}
+
 void handleRoot() {
   logRequest("portal");
   server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
@@ -212,10 +244,65 @@ void handleCount() {
   server.send(200, "text/plain", buf);
 }
 
-// Beacon fired by the page when a contact link is followed.
+// Beacon fired by the page when a contact link is copied.
 void handleClick() {
   clicks++;
   markDirty();
+  logEvent(EV_CLICK, argU32("l"), 0, clientVisitor());
+  server.send(204, "text/plain", "");
+}
+
+// Sent by the page on load: the phone's clock is the badge's only time source.
+void handleHi() {
+  logEvent(EV_VIEW, argU32("d"), argU32("t"), clientVisitor());
+  server.send(204, "text/plain", "");
+}
+
+void handleBye() {
+  logEvent(EV_LEAVE, 0, argU32("s"), clientVisitor());
+  server.send(204, "text/plain", "");
+}
+
+// The admin page itself is public and holds no data; only the data endpoints
+// check the key.
+bool adminOk() {
+  if (server.header("X-Key") == ADMIN_KEY) return true;
+  server.send(401, "text/plain", "bad key");
+  return false;
+}
+
+void handleAdmin() {
+  server.send_P(200, "text/html; charset=utf-8", ADMIN_HTML);
+}
+
+// Raw log plus "boot,uptime_ms,connections,clicks,requester,full" in a header,
+// so the page can date the current boot from its own clock and hide its owner.
+void handleAdminLog() {
+  if (!adminOk()) return;
+  logFlush(true);
+  char meta[64];
+  snprintf(meta, sizeof(meta), "%u,%lu,%u,%u,%lu,%u", logBoot(), (unsigned long)millis(),
+           readConnections(), clicks, (unsigned long)clientVisitor(), logFull());
+  server.sendHeader("X-Badge", meta);
+  server.sendHeader("Cache-Control", "no-store");
+  File f = LittleFS.open(LOG_PATH, "r");
+  if (f) server.streamFile(f, "application/octet-stream");
+  else server.send(200, "application/octet-stream", "");
+}
+
+void handleAdminReset() {
+  if (!adminOk()) return;
+  if (server.method() != HTTP_POST) {
+    server.send(405, "text/plain", "POST only");
+    return;
+  }
+  logReset();
+  noInterrupts();
+  connections = 0;
+  interrupts();
+  clicks = 0;
+  saveStats();
+  drawResting(screen);
   server.send(204, "text/plain", "");
 }
 
@@ -234,6 +321,7 @@ void setup() {
 
   EEPROM.begin(sizeof(Stats));
   loadStats();
+  logBegin();
 
   Wire.begin();
   syncLcd();
@@ -247,19 +335,29 @@ void setup() {
   WiFi.softAP(CFG_SSID, nullptr, 1, false, CFG_MAX_CLIENTS);
 
   onConnect = WiFi.onSoftAPModeStationConnected(
-    [](const WiFiEventSoftAPModeStationConnected &) {
+    [](const WiFiEventSoftAPModeStationConnected &e) {
       connections++;
       alertPending = true;
       markDirty();
+      logEvent(EV_CONNECT, e.aid, 0, visitorId(e.mac));
+    });
+  onDisconnect = WiFi.onSoftAPModeStationDisconnected(
+    [](const WiFiEventSoftAPModeStationDisconnected &e) {
+      logEvent(EV_DISCONNECT, e.aid, 0, visitorId(e.mac));
     });
 
   dns.setErrorReplyCode(DNSReplyCode::NoError);
   dns.start(53, "*", AP_IP);
 
-  server.collectHeaders("User-Agent");
+  server.collectHeaders("User-Agent", "X-Key");
   server.on("/", handleRoot);
   server.on("/count", handleCount);
   server.on("/click", handleClick);
+  server.on("/hi", handleHi);
+  server.on("/bye", handleBye);
+  server.on("/admin", handleAdmin);
+  server.on("/admin/log.bin", handleAdminLog);
+  server.on("/admin/reset", handleAdminReset);
   // Common captive-portal detection URLs across platforms.
   server.on("/generate_204", handleCaptive);
   server.on("/gen_204", handleCaptive);
@@ -287,6 +385,8 @@ void loop() {
     syncLcd();
     if (lcdReady && !wasReady) alertUntil ? drawAlert() : drawResting(screen);
   }
+
+  logFlush();
 
   // Persist the counts a few seconds after the last change (limits flash wear).
   if (statsDirty && now - statsChangedAt >= SAVE_AFTER_MS) {

@@ -394,8 +394,21 @@ function setStatus(msg){if(!stEl)return;stEl.textContent=msg;clearTimeout(stTime
   stTimer=setTimeout(function(){stEl.textContent="Piège armé et opérationnel.";},4000);}
 // Counting beacon + clipboard copy. The portal is http (not a secure context),
 // so navigator.clipboard may be unavailable: fall back to execCommand.
-function fireBeacon(){try{if(navigator.sendBeacon)navigator.sendBeacon("/click");
-  else fetch("/click",{method:"POST",keepalive:true}).catch(function(){});}catch(e){}}
+function fireBeacon(path){try{if(navigator.sendBeacon)navigator.sendBeacon(path);
+  else fetch(path,{method:"POST",keepalive:true}).catch(function(){});}catch(e){}}
+// ---- visit stats for the badge: it has no clock, so this phone's time dates the visit ----
+(function(){
+  var t0=Date.now(),ua=navigator.userAgent,os=0,br=0;
+  if(/iPhone|iPad|iPod/.test(ua))os=1;else if(/Android/.test(ua))os=2;else if(/Windows/.test(ua))os=3;
+  else if(/Mac OS X/.test(ua))os=4;else if(/Linux/.test(ua))os=5;
+  if(/SamsungBrowser\//.test(ua))br=5;else if(/Firefox\/|FxiOS/.test(ua))br=3;else if(/Edg/.test(ua))br=4;
+  else if(/OPR\//.test(ua))br=6;else if(/Chrome\/|CriOS/.test(ua))br=2;else if(/Safari\//.test(ua))br=1;
+  fireBeacon("/hi?t="+Math.floor(t0/1000)+"&d="+(os*16+br));
+  function bye(){fireBeacon("/bye?s="+Math.round((Date.now()-t0)/1000));}
+  addEventListener("pagehide",bye);
+  document.addEventListener("visibilitychange",function(){if(document.hidden)bye();});
+})();
+function linkCode(u){return /caillier-romain/.test(u)?1:/github/.test(u)?2:/linkedin/.test(u)?3:0;}
 function copyText(t){
   if(navigator.clipboard&&navigator.clipboard.writeText)
     return navigator.clipboard.writeText(t).then(function(){return true;},_exec);
@@ -454,7 +467,7 @@ document.getElementById("btnOk").addEventListener("click",function(e){
     var el=e.target&&e.target.closest?e.target.closest("[data-copy]"):null;
     if(!el)return;
     e.preventDefault();
-    fireBeacon();
+    fireBeacon("/click?l="+linkCode(el.getAttribute("data-copy")));
     var fb=(el.querySelector&&el.querySelector(".u"))||el;
     copyText(el.getAttribute("data-copy")).then(function(ok){
       setStatus(ok?"Copié ! Colle-le dans ton navigateur.":"Sélectionne l'adresse, puis copie-la.");
