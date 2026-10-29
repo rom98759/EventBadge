@@ -10,18 +10,15 @@
                   "Qui_a_casse_la_prod", \
                   "Embauchez_moi.exe", \
                   "Le_reseau_est_en_pause_cafe"
+// Phones connected at the same time; 8 is the ESP8266 SDK maximum.
 #define CFG_MAX_CLIENTS 8
 
 // 1 = print every HTTP request (host, path, user agent) on the USB serial, to
-// see which captive-portal probes a phone sends. Nothing is stored.
+// see which captive-portal probes a phone sends. Serial only, never stored.
 #define CFG_LOG_HTTP 0
 
+// LCD strings (ASCII only: the LCD ROM has no accents). The portal's own text
+// lives in web/index.html.
 #define CFG_NAME "Romain"
 #define CFG_ROLE "Dev + Pentest"
-#define CFG_SCHOOL "Ecole 42 Angouleme"
-#define CFG_TITLE "Etudiant 42, stagiaire pentest"
 #define CFG_WHEN "des juin 2027"
-#define CFG_EMAIL "contact@example.com"
-#define CFG_GITHUB "https://github.com/your-handle"
-#define CFG_LINKEDIN "https://www.linkedin.com/in/your-handle"
-#define CFG_SITE "https://example.com"

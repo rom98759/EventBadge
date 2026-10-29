@@ -4,3 +4,5 @@ build/
 *.bin
 .vscode/
 secrets.h
+.env*
+docs/superpowers/

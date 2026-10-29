@@ -86,6 +86,7 @@ function dev(a){return (OS[a>>4]||"?")+" / "+(BR[a&15]||"?");}
 function vid(v){return v?"#"+("0000"+(v>>>0).toString(16)).slice(-5):"?";}
 function dur(s){s=Math.round(s);return s<60?s+" s":s<3600?Math.floor(s/60)+" min "+("0"+s%60).slice(-2):Math.floor(s/3600)+" h "+("0"+Math.floor(s%3600/60)).slice(-2);}
 function med(a){if(!a.length)return null;a=a.slice().sort(function(x,y){return x-y;});return a[a.length>>1];}
+function kb(b){return Math.round(b/1024)+" Ko";}
 function p2(n){return ("0"+n).slice(-2);}
 function hms(t){var d=new Date(t);return p2(d.getHours())+":"+p2(d.getMinutes())+":"+p2(d.getSeconds());}
 function when(e){return e.t?hms(e.t):"boot "+e.boot+" +"+dur(e.ms/1000);}
@@ -109,7 +110,7 @@ function load(){
     if(r.status==401)throw new Error("clé refusée");
     if(!r.ok)throw new Error("HTTP "+r.status);
     var h=(r.headers.get("X-Badge")||"").split(",").map(Number);
-    info={boot:h[0],up:h[1],conn:h[2],clicks:h[3],you:h[4],full:h[5],at:Date.now()};
+    info={boot:h[0],up:h[1],conn:h[2],clicks:h[3],you:h[4],full:h[5],heap:h[6],block:h[7],fsUsed:h[8],fsTotal:h[9],at:Date.now()};
     return r.arrayBuffer();
   }).then(function(b){
     parse(b);return loadWifi();
@@ -178,7 +179,9 @@ function render(){
   var list=visible(),days={},order=[],seen={};
   $("head").innerHTML="Compteurs totaux : <b>"+info.conn+"</b> connexions, <b>"+info.clicks+"</b> liens copiés<br>"+
     "Allumé depuis "+dur(info.up/1000)+" (démarrage n°"+info.boot+") · toi = "+vid(info.you)+
-    " · "+evs.length+" événements"+(info.full?" · <b>journal plein</b>":"");
+    " · "+evs.length+" événements"+(info.full?" · <b>journal plein</b>":"")+
+    (info.heap?"<br>RAM libre "+kb(info.heap)+" (plus grand bloc "+kb(info.block)+") · stockage "+kb(info.fsUsed)+" / "+kb(info.fsTotal)+
+      " · journal "+kb(evs.length*16)+" / 1024 Ko":"");
   list.forEach(function(e){var d=dayOf(e);if(!days[d.k]){days[d.k]={l:d.l,e:[]};order.push(d.k);}days[d.k].e.push(e);});
   order.sort();
   var html="";

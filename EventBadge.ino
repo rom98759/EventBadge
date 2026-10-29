@@ -370,14 +370,19 @@ void handleAdmin() {
   server.send_P(200, "text/html; charset=utf-8", ADMIN_HTML);
 }
 
-// Raw log plus "boot,uptime_ms,connections,clicks,requester,full" in a header,
-// so the page can date the current boot from its own clock and hide its owner.
+// Raw log plus "boot,uptime_ms,connections,clicks,requester,full,free_heap,
+// largest_block,fs_used,fs_total" in a header, so the page can date the
+// current boot from its own clock, hide its owner and show the badge's health.
 void handleAdminLog() {
   if (!adminOk()) return;
   logFlush(true);
-  char meta[64];
-  snprintf(meta, sizeof(meta), "%u,%lu,%u,%u,%lu,%u", logBoot(), (unsigned long)millis(),
-           readConnections(), clicks, (unsigned long)clientVisitor(), logFull());
+  FSInfo fs = {};
+  LittleFS.info(fs);
+  char meta[112];
+  snprintf(meta, sizeof(meta), "%u,%lu,%u,%u,%lu,%u,%lu,%lu,%lu,%lu", logBoot(),
+           (unsigned long)millis(), readConnections(), clicks, (unsigned long)clientVisitor(),
+           logFull(), (unsigned long)ESP.getFreeHeap(), (unsigned long)ESP.getMaxFreeBlockSize(),
+           (unsigned long)fs.usedBytes, (unsigned long)fs.totalBytes);
   server.sendHeader("X-Badge", meta);
   server.sendHeader("Cache-Control", "no-store");
   File f = LittleFS.open(LOG_PATH, "r");
