@@ -17,6 +17,7 @@ const IPAddress AP_IP(4, 3, 2, 1);
 const uint32_t SCREEN_MS = 4500;   // time on each resting screen
 const uint32_t ALERT_MS = 3000;    // time the "new connection" alert stays up
 const uint32_t FLASH_MS = 160;     // backlight blink half-period during an alert
+const uint32_t LCD_CHECK_MS = 2000; // how often to look for the screen / check it is still there
 
 hd44780_I2Cexp lcd;
 DNSServer dns;
@@ -51,6 +52,52 @@ uint32_t alertUntil = 0;
 uint32_t flashAt = 0;
 bool backlightOn = true;
 bool alertPending = false;
+
+// The portal must keep working with the screen missing or unplugged, so the
+// LCD is optional: drawing is skipped while it is absent and it is brought up
+// whenever it (re)appears on the bus.
+bool lcdReady = false;
+uint32_t lcdCheckAt = 0;
+
+// hd44780_I2Cexp's auto-locate counter is static and advances on every failed
+// begin(), so retrying begin() with no device would later skip the real one.
+// Probe the expander ranges ourselves and only call begin() once one answers.
+bool expanderPresent() {
+  for (uint8_t a = 0x20; a <= 0x3F; a++) {
+    if (a == 0x28) a = 0x38;  // PCF8574/MCP23008 0x20-0x27, PCF8574A 0x38-0x3F
+    Wire.beginTransmission(a);
+    if (Wire.endTransmission() == 0) return true;
+  }
+  return false;
+}
+
+bool lcdAnswers() {
+  uint8_t addr = lcd.getProp(hd44780_I2Cexp::Prop_addr);
+  if (!addr) return expanderPresent();
+  Wire.beginTransmission(addr);
+  return Wire.endTransmission() == 0;
+}
+
+// A replugged LCD has lost its state, so (re)appearing always means a full begin().
+void syncLcd() {
+  bool present = lcdAnswers();
+  if (present == lcdReady) return;
+  lcdReady = false;
+  if (!present) {
+    Serial.println(F("LCD: lost, running without it"));
+    return;
+  }
+  int status = lcd.begin(16, 2);
+  if (status) {
+    Serial.printf("LCD: init failed (%d), will retry\n", status);
+    return;
+  }
+  for (uint8_t i = 0; i < sizeof(glyphs) / sizeof(glyphs[0]); i++)
+    lcd.createChar(i, glyphs[i]);
+  lcdReady = true;
+  backlightOn = true;
+  Serial.println(F("LCD: ready"));
+}
 
 void printLine(uint8_t row, const char *text) {
   char buf[17];
@@ -106,6 +153,7 @@ void markDirty() {
 }
 
 void drawResting(uint8_t which) {
+  if (!lcdReady) return;
   lcd.clear();
   char buf[17];
   switch (which) {
@@ -135,6 +183,7 @@ void drawResting(uint8_t which) {
 }
 
 void drawAlert() {
+  if (!lcdReady) return;
   lcd.clear();
   printCentered(0, "+1 CURIEUX !");
   putGlyph(1, 0, WIFI);
@@ -186,11 +235,12 @@ void setup() {
   EEPROM.begin(sizeof(Stats));
   loadStats();
 
-  int status = lcd.begin(16, 2);
-  if (status) hd44780::fatalError(status);
-  for (uint8_t i = 0; i < 3; i++) lcd.createChar(i, glyphs[i]);
-  printLine(0, "EventBadge");
-  printLine(1, "demarrage...");
+  Wire.begin();
+  syncLcd();
+  if (lcdReady) {
+    printLine(0, "EventBadge");
+    printLine(1, "demarrage...");
+  }
 
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(AP_IP, AP_IP, IPAddress(255, 255, 255, 0));
@@ -220,7 +270,7 @@ void setup() {
 
   screen = 0;
   drawResting(screen);
-  screenAt = millis();
+  screenAt = lcdCheckAt = millis();
 
   Serial.printf("AP \"%s\" up at %s\n", CFG_SSID, AP_IP.toString().c_str());
 }
@@ -230,6 +280,13 @@ void loop() {
   server.handleClient();
 
   uint32_t now = millis();
+
+  if (now - lcdCheckAt >= LCD_CHECK_MS) {
+    lcdCheckAt = now;
+    bool wasReady = lcdReady;
+    syncLcd();
+    if (lcdReady && !wasReady) alertUntil ? drawAlert() : drawResting(screen);
+  }
 
   // Persist the counts a few seconds after the last change (limits flash wear).
   if (statsDirty && now - statsChangedAt >= SAVE_AFTER_MS) {
@@ -248,11 +305,14 @@ void loop() {
     if (now - flashAt >= FLASH_MS) {
       flashAt = now;
       backlightOn = !backlightOn;
-      backlightOn ? lcd.backlight() : lcd.noBacklight();
+      if (lcdReady) backlightOn ? lcd.backlight() : lcd.noBacklight();
     }
     if (now >= alertUntil) {
       alertUntil = 0;
-      if (!backlightOn) { lcd.backlight(); backlightOn = true; }
+      if (!backlightOn) {
+        backlightOn = true;
+        if (lcdReady) lcd.backlight();
+      }
       screenAt = now;
       drawResting(screen);
     }

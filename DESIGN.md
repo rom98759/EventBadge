@@ -52,3 +52,34 @@
 - The LCD shows only an anonymous count of connections, never MAC
   addresses, device names or other identifiers.
 - The page states plainly that nothing is collected and how to disconnect.
+
+## Enclosure (2026-10-25)
+
+- **Use:** keychain on the bag strap; power bank stays in the bag, micro-USB
+  cable to the badge. LCD + Wemos in the box, Dupont wires kept (box ~35 mm
+  thick because of the straight plugs on the Wemos).
+- **Chosen:** A "Fenêtre" — the box is a Win95 window: navy title bar
+  `piege.exe` with _ □ × buttons, LCD as the window content, vent slots over
+  the Wemos, white LED slit on the right side. Plus Clippy (the user loves
+  it) in relief on the front (V2, chosen): pink paperclip with white eyes,
+  bottom-left of the window, no size added (104×78×35 mm).
+- **Print strategy (single-extruder Ender 3 V3 SE):** few parts. Front skin
+  either printed face up with filament changes at layer heights (white base →
+  navy title bar → pink/white for Clippy), or as inlays glued into 0.6 mm
+  pockets (plate, title bar, Clippy, eyes); one-colour tub printed back down;
+  M3x4 heat inserts.
+- **LCD:** clamped between the skin (the metal frame bears on the window
+  edge, frame hidden 0.5 mm left/right, 1.5 mm top/bottom) and four posts
+  from the back with pins in the PCB holes. Measured: PCB 80.2×35.8, frame
+  70.9×24.5×6.3, frame 8 mm below the PCB top.
+- **USB:** cable must plug/unplug from outside and be locked: the overmold
+  goes through a hole in the right side and a sliding gate in rails holds it.
+- **Wemos:** left loose in the box (user's choice, hot glue if needed); the
+  cradle, stops and inner tunnel were removed after test prints.
+- **Bag:** belt-style clip(s) glued on the back, open downwards, pinching a
+  40×5 mm bag strap.
+- **Rejected:** V1 Clippy standing on the roof holding the keyring (126 mm
+  tall, fragile), B floppy (100×100, liked but less than A), C full Clippy
+  bubble (loved, too big at 126×93), web-page mock-ups instead of CAD views,
+  a full back plate with a strap tunnel (too bulky), double-sided tape.
+- **CAD source:** `~/Documents/FreeCAD/EventBadge/` (`build_fenetre_clippy.py`).
