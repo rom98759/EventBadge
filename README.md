@@ -6,8 +6,13 @@ introduces me and how to reach me, while an LCD invites people to connect.
 
 <img src="web/assets/badge-sac.jpg" alt="The piege.exe badge clipped on a yellow backpack" width="320">
 
-**Status:** used at a real event. Day 1 (old firmware): 48 Wi-Fi connections
-and 39 links copied.
+**Status:** used at a real two-day event. Day 1 (old firmware): 48 Wi-Fi
+connections and 39 links copied. Day 2 (event log): 13 connections from 8
+unique visitors, 9 portal views, median 47 s on the page.
+
+| Captive portal | `/admin` stats (day 2) |
+| :---: | :---: |
+| <img src="docs/screenshots/portal.png" alt="Captive portal: a Win95 piege.exe window with who I am, the find-me photo and copyable links" width="300"> | <img src="docs/screenshots/admin.png" alt="Admin page: badge health, hotspot name switcher and day 2 visit stats" width="300"> |
 
 ## Features
 
@@ -138,6 +143,7 @@ portal.h            generated from web/index.html
 config.h            default hotspot names, LCD strings
 secrets.example.h   template for the gitignored secrets.h
 web/                portal source, images, build script
+docs/screenshots/   README screenshots
 ```
 
 ## Toolchain
