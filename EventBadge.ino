@@ -326,9 +326,39 @@ void handleContact() {
   server.send_P(200, "text/vcard; charset=utf-8", CONTACT_VCF);
 }
 
+// Every probe and stray app request lands here once DNS points everything at
+// the badge. A tiny redirect keeps those cheap, so the radio and the
+// single-threaded loop (DNS included) stay free for the one real page load.
+void redirectToPortal() {
+  static const String target = String("http://") + AP_IP.toString() + "/";
+  server.sendHeader("Location", target);
+  server.send(302, "text/plain", "");
+}
+
+// Served from one host only, so phones cache the page and its images once
+// rather than per probe hostname.
 void handleRoot() {
+  const String &host = server.hostHeader();
+  if (host.length() && host != AP_IP.toString()) {
+    logRequest("redirect");
+    redirectToPortal();
+    return;
+  }
   logRequest("portal");
-  server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
+  server.sendHeader("ETag", PORTAL_ETAG);
+  server.sendHeader("Cache-Control", "no-cache");
+  if (server.header("If-None-Match") == PORTAL_ETAG) {
+    server.send(304, "text/plain", "");
+    return;
+  }
+  server.sendHeader("Content-Encoding", "gzip");
+  server.send_P(200, "text/html; charset=utf-8", (PGM_P)PORTAL_GZ, sizeof(PORTAL_GZ));
+}
+
+// Image URLs carry a content hash, so they can be cached for good.
+void sendAsset(const PortalAsset &a) {
+  server.sendHeader("Cache-Control", "public, max-age=31536000, immutable");
+  server.send_P(200, a.mime, (PGM_P)a.data, a.len);
 }
 
 // "connections,clicks,hotspot name": real counters and the name in use. The
@@ -435,12 +465,12 @@ void handleAdminReset() {
 }
 
 // OS captive-portal probes expect their own success response (Android wants
-// HTTP 204, iOS wants the word "Success"). Serving the portal HTML with 200
-// instead is what makes the phone decide it is behind a portal and pop the
-// page open on its own, rather than just showing a silent "no internet".
+// HTTP 204, iOS wants the word "Success"). A redirect instead is what makes
+// the phone decide it is behind a portal and pop the page open on its own,
+// rather than just showing a silent "no internet".
 void handleCaptive() {
-  logRequest("portal (probe)");
-  server.send_P(200, "text/html; charset=utf-8", PORTAL_HTML);
+  logRequest("redirect (probe)");
+  redirectToPortal();
 }
 
 void setup() {
@@ -481,8 +511,10 @@ void setup() {
   dns.setErrorReplyCode(DNSReplyCode::NoError);
   dns.start(53, "*", AP_IP);
 
-  server.collectHeaders("User-Agent", "X-Key");
+  server.collectHeaders("User-Agent", "X-Key", "If-None-Match");
   server.on("/", handleRoot);
+  for (const PortalAsset &a : PORTAL_ASSETS)
+    server.on(a.path, HTTP_GET, [p = &a]() { sendAsset(*p); });
   server.on("/count", handleCount);
   server.on("/click", handleClick);
   server.on("/hi", handleHi);

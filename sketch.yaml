@@ -1,2 +1,2 @@
-default_fqbn: esp8266:esp8266:d1_mini
+default_fqbn: esp8266:esp8266:d1_mini:ip=hb2f
 default_port: /dev/ttyUSB0
