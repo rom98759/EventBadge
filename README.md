@@ -68,7 +68,9 @@ from rewriting its config sector on each hotspot-name change.
 - Wemos D1 mini (ESP8266EX, 4 MB flash, CH340 USB-serial)
 - LCD1602 + PCF8574 I²C backpack (auto-detected, here 0x27)
 - USB power bank in the bag, micro-USB cable to the badge
-- 3D-printed Win95 window case with a Clippy inlay (FreeCAD, separate repo)
+- 3D-printed Win95 window case with Clippy in relief and a locked USB cable:
+  [`enclosure/`](enclosure/) (FreeCAD scripts, print guide), STL files in the
+  [`enclosure-v1` release](https://github.com/rom98759/EventBadge/releases/tag/enclosure-v1)
 
 | LCD backpack | D1 mini |
 |---|---|
@@ -144,6 +146,7 @@ config.h            default hotspot names, LCD strings
 secrets.example.h   template for the gitignored secrets.h
 web/                portal source, images, build script
 docs/screenshots/   README screenshots
+enclosure/          3D-printed case: FreeCAD scripts, renders, print guide
 ```
 
 ## Toolchain
