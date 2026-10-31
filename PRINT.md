@@ -1,8 +1,8 @@
 # EventBadge — boîtier « Fenêtre » V2 (Clippy en relief)
 
-Sources : `build_fenetre_clippy.py` (boîtier) et `build_strap_clip.py` (pince sac), à lancer dans
+Sources : `scripts/enclosure.py` (boîtier) et `scripts/strap_clip.py` (pince sac), à lancer dans
 la console Python de FreeCAD avec `exec(open("<chemin>").read())`.
-STL prêts à imprimer, déjà orientés : `variantes/Fenetre_V2/`. Ils sont générés par les scripts
+STL prêts à imprimer, déjà orientés : `stl/`. Ils sont générés par les scripts
 et ne sont pas versionnés (ni les `.FCStd`) : relancer les scripts pour les recréer.
 
 | Pièce | Fichier | Orientation | Taille (mm) | Couleur |
@@ -11,7 +11,7 @@ et ne sont pas versionnés (ni les `.FCStd`) : relancer les scripts pour les rec
 | Coque | `V2_Tub.stl` | dos sur le plateau | 103 × 78 × 31 | blanc |
 | Verrou USB | `V2_Gate.stl` | à plat | 20 × 17 × 4 | bleu |
 | Pince sangle (×1 ou ×2, collée au dos) | `V2_Strap_Clip.stl` | couchée sur le côté | 11 × 40 × 20 | n'importe |
-| **Test** coin USB | `V2_TEST_coin_USB.stl` | dos sur le plateau | 59 × 31 × 31 | n'importe |
+| **Test** coin USB | `V2_TEST_coin_USB.stl` | dos sur le plateau | 63 × 31 × 31 | n'importe |
 
 Ordre conseillé : 1) `V2_TEST_coin_USB` + `V2_Gate` (prise, verrou, Wemos),
 2) `V2_Skin` (LCD dans la fenêtre, couleurs), 3) `V2_Tub` (la plus longue).
@@ -30,7 +30,7 @@ aux couches commençant à **2,0 / 2,8 / 3,8 mm**.
 
 ## Variante façade en marqueterie (sans changement de filament)
 
-Dossier `variantes/Fenetre_V2/facade_marqueterie/`, pièces collées dans des logements
+Dossier `stl/facade_marqueterie/`, pièces collées dans des logements
 de 0,6 mm (jeu 0,15 mm par côté), toutes à plat face vers le haut :
 
 | Pièce | Fichier | Taille (mm) | Filament |
@@ -45,6 +45,8 @@ de 0,6 mm (jeu 0,15 mm par côté), toutes à plat face vers le haut :
   bandeau, soit peindre les lettres au feutre-peinture blanc.
 - Pupilles : creux dans les yeux, à remplir au feutre noir.
 - Collage : cyanoacrylate (super glue) en petits points, ou colle contact.
+- Bandeau : **pas de lissage (ironing)**, il traîne du plastique dans les lettres gravées ;
+  activer « éviter de traverser les parois », paroi extérieure à 30–40 mm/s.
   Tester l'emboîtement à sec d'abord ; si ça force, poncer le chant de la pièce.
 
 ## Quincaillerie
@@ -52,7 +54,7 @@ de 0,6 mm (jeu 0,15 mm par côté), toutes à plat face vers le haut :
 - 4 inserts laiton M3 × 4 (trou Ø 4,1) dans les bossages de la coque, posés au fer.
 - 4 vis M3 tête fraisée, longueur 6–8 mm, par l'avant.
 - Anneau porte-clé standard dans l'icône de la fenêtre (trou Ø 4,8).
-- Sac : `V2_Strap_Clip` (source `build_strap_clip.py`), pince type ceinture collée au dos (époxy),
+- Sac : `V2_Strap_Clip` (source `scripts/strap_clip.py`), pince type ceinture collée au dos (époxy),
   ouverture vers le bas ; serre une sangle de 5 mm (pincement 3,5 mm).
 
 ## Montage

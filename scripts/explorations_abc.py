@@ -1,5 +1,5 @@
 # EventBadge keychain enclosure: three simple box mock-ups around the real parts.
-# Run inside FreeCAD: exec(open(".../build_eventbadge.py").read())
+# Run inside FreeCAD: exec(open("/home/romain/Documents/FreeCAD/EventBadge/scripts/explorations_abc.py").read())
 # Axes: X = width, Z = height, Y = depth (y=0 is the inner face of the front wall,
 # visitors look at the box from -Y).
 import os
@@ -9,7 +9,7 @@ import Part
 from FreeCAD import Vector as V
 
 DOC = "EventBadge"
-OUT = "/home/romain/Documents/FreeCAD/EventBadge"
+OUT = "/home/romain/Documents/FreeCAD/EventBadge"  # rejected A/B/C directions, kept for the record
 
 T = 2.0                    # wall thickness
 W, D = 96.0, 29.0          # inner width and depth (depth set by Dupont plugs + wire bend)
@@ -272,13 +272,13 @@ for tag, fn, ox in (("A", variant_a, 0.0), ("B", variant_b, 170.0), ("C", varian
     bb = fuse_all([s for _, s, _ in enc]).BoundBox
     report[tag] = {"outer": (round(bb.XLength, 1), round(bb.ZLength, 1), round(bb.YLength, 1)),
                    "clashes": clashes}
-    vdir = os.path.join(OUT, "variantes", tag)
+    vdir = os.path.join(OUT, "archive", "variantes", tag)
     os.makedirs(vdir, exist_ok=True)
     for name, shp, _ in enc:
         shp.exportStl(os.path.join(vdir, "%s_%s.stl" % (tag, name)))
 
 doc.recompute()
-doc.saveAs(os.path.join(OUT, "EventBadge.FCStd"))
+doc.saveAs(os.path.join(OUT, "cad", "EventBadge.FCStd"))
 
 
 def show(prefixes):
@@ -294,8 +294,8 @@ def snap(prefixes, view, fname, hide=()):
     v = Gui.getDocument(DOC).activeView()
     getattr(v, "view" + view)()
     v.fitAll()
-    os.makedirs(os.path.join(OUT, "images"), exist_ok=True)
-    v.saveImage(os.path.join(OUT, "images", fname), 2000, 1000, "White")
+    os.makedirs(os.path.join(OUT, "images", "explorations"), exist_ok=True)
+    v.saveImage(os.path.join(OUT, "images", "explorations", fname), 2000, 1000, "White")
 
 
 print(report)

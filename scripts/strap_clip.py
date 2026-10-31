@@ -4,7 +4,7 @@ The clip is closed at the top and open at the bottom: the badge hangs under
 the strap. The tongue leans towards the base so it pinches the strap, and
 flares out at its tip so the strap slides in.
 Run in the FreeCAD Python console:
-    exec(open("/home/romain/Documents/FreeCAD/EventBadge/build_strap_clip.py").read())
+    exec(open("/home/romain/Documents/FreeCAD/EventBadge/scripts/strap_clip.py").read())
 """
 import os
 import FreeCAD as App
@@ -12,7 +12,7 @@ import Part
 import Mesh
 
 V = App.Vector
-OUT = "/home/romain/Documents/FreeCAD/EventBadge/variantes/Fenetre_V2"
+OUT = "/home/romain/Documents/FreeCAD/EventBadge/stl"
 
 CLIP_W = 20.0      # along the strap
 CLIP_L = 40.0      # height of the glued base

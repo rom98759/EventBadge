@@ -2,7 +2,7 @@
 # Parts: Skin (front plate, printed face up, colours by filament change at layer
 # heights), Tub (sides + back + inner supports, printed back down), Gate (sliding
 # USB lock), and for V1 a Clippy that holds the keyring.
-# Run inside FreeCAD: exec(open(".../build_fenetre_clippy.py").read())
+# Run inside FreeCAD: exec(open("/home/romain/Documents/FreeCAD/EventBadge/scripts/enclosure.py").read())
 # Axes: X = width, Z = height, Y = depth (y=0 is the back face of the skin,
 # visitors look from -Y).
 import os
@@ -12,7 +12,9 @@ import Part
 from FreeCAD import Vector as V
 
 DOC = "EventBadge_Fenetre"
-OUT = "/home/romain/Documents/FreeCAD/EventBadge"
+ROOT = "/home/romain/Documents/FreeCAD/EventBadge"
+STL_DIR = os.path.join(ROOT, "stl")
+CAD_DIR = os.path.join(ROOT, "cad")
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 T = 2.0                    # wall / skin thickness
@@ -380,7 +382,7 @@ for tag, ox, roof in VARIANTS:
                 o.Shape = sh
                 o.ViewObject.ShapeColor = COL[col]
     # STL per printed part (colour bands stay merged in one body per plate)
-    vdir = os.path.join(OUT, "variantes", "Fenetre_" + tag)
+    vdir = STL_DIR
     os.makedirs(vdir, exist_ok=True)
     groups = {}
     for name, shp, _ in printed:
@@ -434,5 +436,6 @@ for tag, ox, roof in VARIANTS:
             report[tag]["inlay_" + name] = (round(bb.XLength, 1), round(bb.YLength, 1), round(bb.ZLength, 1))
 
 doc.recompute()
-doc.saveAs(os.path.join(OUT, "EventBadge_Fenetre.FCStd"))
+os.makedirs(CAD_DIR, exist_ok=True)
+doc.saveAs(os.path.join(CAD_DIR, "EventBadge_Fenetre.FCStd"))
 print(report)
