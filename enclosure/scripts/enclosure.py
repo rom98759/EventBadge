@@ -2,7 +2,8 @@
 # Parts: Skin (front plate, printed face up, colours by filament change at layer
 # heights), Tub (sides + back + inner supports, printed back down), Gate (sliding
 # USB lock), and for V1 a Clippy that holds the keyring.
-# Run inside FreeCAD: exec(open("/home/romain/Documents/FreeCAD/EventBadge/scripts/enclosure.py").read())
+# Run from FreeCAD (Macro > Execute macro, or the Python console):
+#   p = "<repo>/enclosure/scripts/enclosure.py"; exec(open(p).read(), {"__file__": p})
 # Axes: X = width, Z = height, Y = depth (y=0 is the back face of the skin,
 # visitors look from -Y).
 import os
@@ -12,7 +13,7 @@ import Part
 from FreeCAD import Vector as V
 
 DOC = "EventBadge_Fenetre"
-ROOT = "/home/romain/Documents/FreeCAD/EventBadge"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # enclosure/
 STL_DIR = os.path.join(ROOT, "stl")
 CAD_DIR = os.path.join(ROOT, "cad")
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"

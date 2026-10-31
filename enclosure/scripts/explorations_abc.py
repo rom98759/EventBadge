@@ -1,5 +1,6 @@
 # EventBadge keychain enclosure: three simple box mock-ups around the real parts.
-# Run inside FreeCAD: exec(open("/home/romain/Documents/FreeCAD/EventBadge/scripts/explorations_abc.py").read())
+# Run from FreeCAD (Macro > Execute macro, or the Python console):
+#   p = "<repo>/enclosure/scripts/explorations_abc.py"; exec(open(p).read(), {"__file__": p})
 # Axes: X = width, Z = height, Y = depth (y=0 is the inner face of the front wall,
 # visitors look at the box from -Y).
 import os
@@ -9,7 +10,7 @@ import Part
 from FreeCAD import Vector as V
 
 DOC = "EventBadge"
-OUT = "/home/romain/Documents/FreeCAD/EventBadge"  # rejected A/B/C directions, kept for the record
+OUT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # rejected A/B/C directions, kept for the record
 
 T = 2.0                    # wall thickness
 W, D = 96.0, 29.0          # inner width and depth (depth set by Dupont plugs + wire bend)
